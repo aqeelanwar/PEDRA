@@ -1,5 +1,7 @@
 import numpy as np
 import os
+import sys
+sys.path.append("..")
 import tensorflow as tf
 import cv2
 from network.network import *
@@ -10,10 +12,11 @@ from util.transformations import euler_from_quaternion
 from PIL import Image
 from network.loss_functions import *
 from numpy import linalg as LA
-
+from aux_functions import print_str
 class DeepAgent():
     def __init__(self, cfg, client, name):
-        print('------------------------------ ' +str(name)+ ' ------------------------------')
+        print_str(name)
+        print('Loading')
         self.g = tf.Graph()
         self.iter=0
         with self.g.as_default():
@@ -57,6 +60,8 @@ class DeepAgent():
         if cfg.custom_load:
             print('Loading weights from: ', cfg.custom_load_path)
             self.load_network(cfg.custom_load_path)
+        else:
+            print('Loading imagenet weights')
 
 
         # print()

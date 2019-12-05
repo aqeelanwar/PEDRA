@@ -1,9 +1,6 @@
-# Branch - DFA Implementation
 import sys
 from network.agent import DeepAgent
 from environments.initial_positions import *
-
-
 import psutil
 from os import getpid
 from network.Memory import Memory
@@ -48,7 +45,7 @@ episode = 0
 active = True
 
 automate = True
-choose=False
+choose = False
 print_qval=False
 last_crash=0
 ret = 0
@@ -68,14 +65,14 @@ epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
 current_state = agent.get_state()
 
 # Log file
+print_str('Log File')
 log_path = cfg.network_path+'log.txt'
 print("Log path: ", log_path)
 f = open(log_path, 'w')
 
-
+print_str('Begin')
 while active:
     try:
-
         active, automate, cfg.lr, client = check_user_input(active, automate, cfg.lr, cfg.epsilon, agent, cfg.network_path, client, old_posit, initZ)
 
         if automate:
@@ -112,11 +109,11 @@ while active:
                 # environ = environ^True
 
 
-            action1, action_type, cfg.epsilon, qvals = policy(cfg.epsilon, current_state, iter, cfg.epsilon_saturation, cfg.epsilon_model,  cfg.wait_before_train, cfg.num_actions, agent)
+            action, action_type, cfg.epsilon, qvals = policy(cfg.epsilon, current_state, iter, cfg.epsilon_saturation, cfg.epsilon_model,  cfg.wait_before_train, cfg.num_actions, agent)
 
-            action_word1 = translate_action(action1, cfg.num_actions)
+            action_word = translate_action(action, cfg.num_actions)
             # Take the action
-            agent.take_action(action1, cfg.num_actions)
+            agent.take_action(action, cfg.num_actions)
             time.sleep(0.05)
 
             posit = client.simGetVehiclePose()
@@ -134,7 +131,7 @@ while active:
             distance = distance + np.linalg.norm(new_p - old_p)
             old_posit = posit
 
-            reward, crash = agent.reward_gen(new_depth1, action1, crash_threshold, thresh)
+            reward, crash = agent.reward_gen(new_depth1, action, crash_threshold, thresh)
 
             ret = ret+reward
             agent_state1 = agent.GetAgentState()
@@ -145,7 +142,7 @@ while active:
                 crash = True
                 reward = -1
             data_tuple=[]
-            data_tuple.append([current_state, action1, new_state, reward, crash])
+            data_tuple.append([current_state, action, new_state, reward, crash])
             err = get_errors(data_tuple, choose, ReplayMemory, cfg.input_size, agent, target_agent, cfg.gamma, cfg.Q_clip)
             ReplayMemory.add(err, data_tuple)
 
@@ -181,7 +178,7 @@ while active:
 
             s_log = 'Level :{:>2d}: Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} Mem = {:<5.4f}  Reward: {:<+1.4f}  '.format(
                     int(level),iter, episode,
-                    action_word1,
+                    action_word,
                     action_type,
                     cfg.epsilon,
                     cfg.lr,

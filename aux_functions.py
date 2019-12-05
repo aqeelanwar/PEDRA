@@ -10,6 +10,12 @@ import airsim
 import pygame
 from configs.read_cfg import read_cfg
 
+
+def print_str(name):
+    n = 80
+    print_str = '-' * int(np.floor((n - len(name)) / 2)) + ' ' + name +' '+ '-' * int(np.ceil((n - len(name)) / 2))
+    print(print_str)
+
 def save_network_path(cfg):
     # Save the network to the directory network_path
     weights_type = 'Imagenet'
@@ -36,9 +42,9 @@ def start_environment(env_name):
 
 
 def translate_action(action, num_actions):
-    action_word = ['Forward', 'Right', 'Left', 'Sharp Right', 'Sharp Left']
+    # action_word = ['Forward', 'Right', 'Left', 'Sharp Right', 'Sharp Left']
     sqrt_num_actions = np.sqrt(num_actions)
-    ind = np.arange(sqrt_num_actions)
+    # ind = np.arange(sqrt_num_actions)
     if sqrt_num_actions % 2 == 0:
         v_string = list('U'*int(sqrt_num_actions/2) + 'F'+ 'D'*int(sqrt_num_actions/2))
         h_string = list('L' * int(sqrt_num_actions/2) + 'F' + 'R' * int(sqrt_num_actions/2))
@@ -100,13 +106,12 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
 
 
     TD = np.zeros(shape=[batch_size])
-    err = np.zeros(shape=[batch_size])
     Q_target = np.zeros(shape=[batch_size])
 
-    term_ind = np.where(rewards==-1)[0]
-    nonterm_ind = np.where(rewards!=-1)[0]
+    term_ind = np.where(rewards == -1)[0]
+    nonterm_ind = np.where(rewards != -1)[0]
 
-    TD[nonterm_ind] = rewards[nonterm_ind] + gamma* newQval_B[nonterm_ind, np.argmax(newQval_A[nonterm_ind], axis=1)] - oldQval_A[nonterm_ind, actions[nonterm_ind].astype(int)]
+    TD[nonterm_ind] = rewards[nonterm_ind] + gamma * newQval_B[nonterm_ind, np.argmax(newQval_A[nonterm_ind], axis=1)] - oldQval_A[nonterm_ind, actions[nonterm_ind].astype(int)]
     TD[term_ind] = rewards[term_ind]
 
     if Q_clip:
@@ -153,7 +158,8 @@ def reset_to_initial(level, reset_array, client):
 
 
 def connect_drone(ip_address='127.0.0.0'):
-    print('------------------------------ Drone ------------------------------')
+    print_str('Drone')
+    print("IP Address: ", ip_address)
     client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
     client.confirmConnection()
     old_posit = client.simGetVehiclePose()
