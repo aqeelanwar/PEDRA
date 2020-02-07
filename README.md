@@ -1,24 +1,29 @@
-# Deep Reinforcement Learning with Transfer Learning - Simulated Drone and Environment (DRLwithTL-Sim)
+# Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA)
 
-# What is DRLwithTL-Sim?
-This repository uses Transfer Learning (TL) based approach to reduce on-board computation required to train a deep neural network for autonomous navigation via Deep Reinforcement Learning for a target algorithmic performance. A library of 3D realistic meta-environments is manually designed using Unreal Gaming Engine and the network is trained end-to- end. These trained meta-weights are then used as initializers to the network in a **simulated** test environment and fine-tuned for the last few fully connected layers. Variation in drone dynamics and environmental characteristics is carried out to show robustness of the approach.
-The repository containing the code for **real** environment on a **real** DJI Tello drone can be found @ [DRLwithTL-Real](https://github.com/aqeelanwar/DRLwithTL_real)
+# What is PEDRA?
+PEDRA is a programmable engine for Drone Reinforcement Learning (RL) applications. The engine is developed in Python and is module-wise programmable. PEDRA is targeted mainly at goal-oriented RL problems for drones, but can also be extended to other problems such as SLAM etc. The engine interfaces with Unreal gaming engine using AirSim to create the complete platform. Figure \ref{fig:block} shows the complete block diagram of the engine. Unreal engine \cite{unreal} is used to create 3D realistic environments for the drones to be trained in. Different level of details can be added to make the environment look as realistic or as required as possible. Once the environments are ready, it is interfaced with PEDRA using AirSim \cite{shah2018airsim}. AirSim is an open source plugin developed by Microsoft that interfaces Unreal Engine with Python. It provides basic python functionalities controlling the sensory inputs and control signals of the drone. PEDRA is built onto the low level python modules provided by AirSim creating higher level python modules for the purpose of drone RL applications.
 
 
-![Cover Photo](/images/cover.png)
-![Cover Photo](/images/depth.gif)
+![Cover Photo](/images/pedra_block.png)
+
 ![Cover Photo](/images/envs.png)
 
 
-## Introductory Video
-[![Watch the video](/images/video_cover.png)](https://youtu.be/zmR0KB_qle8)
 
-# Installing DRLwithTL-Sim
-The current version of DRLwithTL-Sim supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with DRLwithTL-Sim
+# PEDRA Workflow
+The complete workflow of PEDRA can be seen in Figure below. The engine takes input from a config file (.cfg). This config file is used to define the problem and the algorithm for solving it. It is algorithmic specific and is used to define algorithm related parameters. Right now the supported problem is camera based autonomous navigation and the supported algorithms are single drone vanilla RL, single drone PER/DDQN based RL. More problems and associated algorithms are being added.
+The most important feature of PEDRA is the high level python modules that can be used as building blocks to implement multiple algorithms for drone oriented applications. The user can either select from the above mentioned algorithms, or can create their own using these building blocks. In case the user wants to define their own problem and associated algorithm, these building blocks can be used. Once these requirements are set, the simulation can begin. PyGame screen can be used to control simulation parameters such as pausing the simulation, modifying algorithmic or training parameters, overwrite config file and save the current state of the simulation etc.  PEDRA generates a number of output files. The log file keeps track of the simulation state per iteration listing useful algorithmic parameters. This is particularly useful when troubleshooting the simulation. Tensorboard can be used to visualize the training plots in run-time. These plots are particularly useful to monitor training parameters and to change the input parameters using the PyGame screen if need be.
+![Cover Photo](/images/pedra_workflow.png)
+
+
+![Cover Photo](/images/depth.gif)
+
+# Installing PEDRA
+The current version of PEDRA supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
 
 ## Clone the repository
 ```
-git clone https://github.com/aqeelanwar/DRLwithTL.git
+git clone https://github.com/aqeelanwar/PEDRA.git
 ```
 
 ## Download imagenet weights for AlexNet
@@ -34,7 +39,7 @@ models/imagenet.npy
 ## Install required packages
 The provided requirements.txt file can be used to install all the required packages. Use the following command
 ```
-cd DRLwithTL
+cd PEDRA
 pip install –r requirements.txt
 ```
 This will install the required packages in the activated python environment.
@@ -52,7 +57,8 @@ AirSim is an open-source plugin for Unreal Engine developed by Microsoft for age
 
 
 
-# Running DRLwithTL-Sim
+
+# Running PEDRA
 Once you have the required packages and software downloaded and running, you can take the following steps to run the code
 
 ## Create/Download a simulated environment
@@ -75,8 +81,8 @@ Following environments are available for download from the link above
 The link above will help you download the packaged version of the environment for 64-bit windows. Save the folder in the unreal_env folder (create the unreal_env folder if it doesn't exist).
 
 ```
-DRLwithTL/unreal_env/<downloaded-environment-folder>    # Generic
-DRLwithTL/unreal_env/indoor_cloud                       # Example
+PEDRA/unreal_env/<downloaded-environment-folder>    # Generic
+PEDRA/unreal_env/indoor_cloud                       # Example
 ```
 
 
@@ -84,7 +90,7 @@ DRLwithTL/unreal_env/indoor_cloud                       # Example
 The RL parameters for the DRL simulation can be set using the provided config file and are self-explanatory. The details on the parameters in the config file can be found [here](https://towardsdatascience.com/deep-reinforcement-learning-for-drones-in-3d-realistic-environments-36821b6ee077)
 
 ```
-cd DRLwithTL\configs
+cd PEDRA\configs
 notepad config.cfg (#for windows)
 ```
 
@@ -136,7 +142,7 @@ notepad config.cfg (#for windows)
 To carry out training, make sure the phase parameter within the [general_params] group of the config file is set to train. After setting the parameters in under the [RL_params] category, the DRL training code can be started using the following command
 
 ```
-cd DRLwithTL
+cd PEDRA
 python main.py
 ```
 
@@ -210,7 +216,17 @@ Right now the simulation supports only the following two functionalities (other 
 unreal_env/<env_name>/results/
 ```
 
-## Citing
+# Example: Deep Reinforcement Learning with Transfer Learning (DRLwithTL-Sim)
+
+DRLwithTL is a transfer learning based approach to reduce on-board computation required to train a deep neural network for autonomous navigation via Deep Reinforcement Learning for a target algorithmic performance. PEDRA provided environments are used to train the network on a set of meta-environments. These trained meta-weights are then used as initializers to the network in test environments and fine-tuned for the last few fully connected layers. Variation in drone dynamics and environmental characteristics is carried out to show robustness of the approach. The repository containing the code for real environment on a real DJI Tello drone can be found @ [DRLwithTL-Real](https://github.com/aqeelanwar/DRLwithTL_real)
+## Introductory Video
+[![Watch the video](/images/video_cover.png)](https://youtu.be/zmR0KB_qle8)
+
+## PEDRA config for DRLwithTL
+PEDRA's config file can be used to carry out DRLwithTL. The parameter train_type can be used to dictate how many layers from the end needs to be trained.
+
+
+# Citing
 If you find this repository useful for your research please use the following bibtex citations
 
 ```
