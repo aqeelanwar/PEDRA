@@ -5,6 +5,25 @@
 import configparser as cp
 from dotmap import DotMap
 
+def read_env_cfg(config_filename = 'configs/main.cfg'):
+    # Load from config file
+    cfg = DotMap()
+
+    config = cp.ConfigParser()
+    config.read(config_filename)
+
+    cfg.run_name = config.get('general_params', 'env_name')
+    cfg.floorplan = str(config.get('general_params', 'floorplan'))
+    cfg.o_x = float(config.get('general_params', 'o_x').split(',')[0])
+    cfg.o_y = float(config.get('general_params', 'o_y').split(',')[0])
+    cfg.alpha = float(config.get('general_params', 'alpha').split(',')[0])
+    cfg.ceiling_z = float(config.get('general_params', 'ceiling_z').split(',')[0])
+    cfg.floor_z = float(config.get('general_params', 'floor_z').split(',')[0])
+    cfg.player_start_z = float(config.get('general_params', 'player_start_z').split(',')[0])
+
+    return cfg
+
+
 def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     # Load from config file
     cfg = DotMap()
@@ -20,6 +39,7 @@ def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     cfg.custom_load_path = str(config.get('general_params', 'custom_load_path'))
     cfg.env_type = config.get('general_params', 'env_type')
     cfg.env_name = config.get('general_params', 'env_name')
+    cfg.phase = config.get('general_params', 'phase')
 
     # [Simulation Parameters]
     if str(config.get('simulation_params', 'load_data')) =='True':
@@ -49,7 +69,7 @@ def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     cfg.update_target_interval = int(config.get('RL_params', 'update_target_interval').split(',')[0])
 
 
-    if verbose:
+    if verbose and cfg.phase=='train':
         print('------------------------------ Config File ------------------------------')
         for param in cfg:
             spaces = ' '*(30-len(param))

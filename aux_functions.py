@@ -2,19 +2,23 @@
 # Created: 10/14/2019, 12:50 PM
 # Email: aqeel.anwar@gatech.edu
 import numpy as np
-import os, subprocess
+import os, subprocess, psutil
 import math
 import random
 import time
 import airsim
 import pygame
 from configs.read_cfg import read_cfg
+import matplotlib.pyplot as plt
 
 
-def print_str(name):
-    n = 80
-    print_str = '-' * int(np.floor((n - len(name)) / 2)) + ' ' + name +' '+ '-' * int(np.ceil((n - len(name)) / 2))
-    print(print_str)
+def close_env(env_process):
+    process = psutil.Process(env_process.pid)
+    for proc in process.children(recursive=True):
+        proc.kill()
+    process.kill()
+
+
 
 def save_network_path(cfg):
     # Save the network to the directory network_path
@@ -31,27 +35,55 @@ def save_network_path(cfg):
 
 
 def start_environment(env_name):
-    path = os.path.dirname(os.path.abspath(__file__)) + "/unreal_envs/" + env_name + "/" + env_name + ".exe"
-    # print(path)
+    env_folder = os.path.dirname(os.path.abspath(__file__)) + "/unreal_envs/" + env_name + "/"
+    path = env_folder + env_name + ".exe"
     env_process = subprocess.Popen(path)
-    time.sleep(6)
+    time.sleep(5)
     print("Successfully loaded environment: " + env_name)
 
-    return env_process
+    return env_process, env_folder
 
 
+def initialize_infer(env_cfg, client, env_folder):
+
+    if not os.path.exists(env_folder+'results'):
+        os.makedirs(env_folder+'results')
+
+    # Mapping floor to 0 height
+    c_z = (env_cfg.ceiling_z-env_cfg.floor_z)/100
+    p_z = (env_cfg.player_start_z-env_cfg.floor_z)/100
+
+    plt.ion()
+    fig_z = plt.figure()
+    ax_z = fig_z.add_subplot(111)
+    line_z, = ax_z.plot(0, 0)
+    ax_z.set_ylim(0, c_z)
+    plt.title("Altitude variation")
+
+    # start_posit = client.simGetVehiclePose()
+
+    fig_nav = plt.figure()
+    ax_nav = fig_nav.add_subplot(111)
+    img = plt.imread(env_folder+ env_cfg.floorplan)
+    ax_nav.imshow(img)
+    plt.axis('off')
+    plt.title("Navigational map")
+    plt.plot(env_cfg.o_x, env_cfg.o_y, 'b*', linewidth=20)
+    nav, = ax_nav.plot(env_cfg.o_x, env_cfg.o_y)
+
+
+    return p_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav
 
 def translate_action(action, num_actions):
     # action_word = ['Forward', 'Right', 'Left', 'Sharp Right', 'Sharp Left']
     sqrt_num_actions = np.sqrt(num_actions)
     # ind = np.arange(sqrt_num_actions)
     if sqrt_num_actions % 2 == 0:
-        v_string = list('U'*int(sqrt_num_actions/2) + 'F'+ 'D'*int(sqrt_num_actions/2))
-        h_string = list('L' * int(sqrt_num_actions/2) + 'F' + 'R' * int(sqrt_num_actions/2))
+        v_string = list('U' * int((sqrt_num_actions - 1) / 2) + 'D' * int((sqrt_num_actions - 1) / 2))
+        h_string = list('L' * int((sqrt_num_actions - 1) / 2) + 'R' * int((sqrt_num_actions - 1) / 2))
     else:
-        v_string = list('U' * int((sqrt_num_actions-1)/2) + 'D' * int((sqrt_num_actions-1)/2))
-        h_string = list('L' * int((sqrt_num_actions-1)/2) + 'R' * int((sqrt_num_actions-1)/2))
-
+        v_string = list('U' * int(sqrt_num_actions / 2) + 'F' + 'D' * int(sqrt_num_actions / 2))
+        h_string = list('L' * int(sqrt_num_actions / 2) + 'F' + 'R' * int(sqrt_num_actions / 2))
 
     v_ind = int(action[0]/sqrt_num_actions)
     h_ind = int(action[0]%sqrt_num_actions)
@@ -106,12 +138,13 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
 
 
     TD = np.zeros(shape=[batch_size])
+    err = np.zeros(shape=[batch_size])
     Q_target = np.zeros(shape=[batch_size])
 
-    term_ind = np.where(rewards == -1)[0]
-    nonterm_ind = np.where(rewards != -1)[0]
+    term_ind = np.where(rewards==-1)[0]
+    nonterm_ind = np.where(rewards!=-1)[0]
 
-    TD[nonterm_ind] = rewards[nonterm_ind] + gamma * newQval_B[nonterm_ind, np.argmax(newQval_A[nonterm_ind], axis=1)] - oldQval_A[nonterm_ind, actions[nonterm_ind].astype(int)]
+    TD[nonterm_ind] = rewards[nonterm_ind] + gamma* newQval_B[nonterm_ind, np.argmax(newQval_A[nonterm_ind], axis=1)] - oldQval_A[nonterm_ind, actions[nonterm_ind].astype(int)]
     TD[term_ind] = rewards[term_ind]
 
     if Q_clip:
@@ -128,6 +161,7 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
 
 def policy(epsilon,curr_state, iter, b, epsilon_model, wait_before_train, num_actions, agent):
     qvals=[]
+
     epsilon_ceil=0.95
     if epsilon_model=='linear':
         epsilon = epsilon_ceil* (iter-wait_before_train) / (b-wait_before_train)
@@ -157,15 +191,19 @@ def reset_to_initial(level, reset_array, client):
     time.sleep(0.1)
 
 
-def connect_drone(ip_address='127.0.0.0'):
-    print_str('Drone')
-    print("IP Address: ", ip_address)
+def connect_drone(ip_address='127.0.0.0', phase='infer'):
+    print('------------------------------ Drone ------------------------------')
     client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
     client.confirmConnection()
     old_posit = client.simGetVehiclePose()
-    client.simSetVehiclePose(
-        airsim.Pose(airsim.Vector3r(0, 0, -2.2), old_posit.orientation),
-        ignore_collison=True)
+    if phase == 'train':
+        client.simSetVehiclePose(
+            airsim.Pose(airsim.Vector3r(0, 0, 0), old_posit.orientation),
+            ignore_collison=True)
+    elif phase == 'infer':
+        client.enableApiControl(True)
+        client.armDisarm(True)
+        client.takeoffAsync().join()
 
     return client, old_posit
 
@@ -186,13 +224,18 @@ def blit_text(surface, text, pos, font, color=pygame.Color('black')):
         x = pos[0]  # Reset the x.
         y += word_height  # Start on new row.
 
-def pygame_connect(H=925, W=380):
+def pygame_connect(phase):
     pygame.init()
-    screen_width = H
-    screen_height = W
-    screen = pygame.display.set_mode([screen_width, screen_height])
-    carImg = pygame.image.load('images/keys.png')
-    screen.blit(carImg, (0, 0))
+
+    if phase == 'train':
+        img_path = 'images/train_keys.png'
+    elif phase == 'infer':
+        img_path = 'images/infer_keys.png'
+    img = pygame.image.load(img_path)
+
+    screen = pygame.display.set_mode(img.get_rect().size)
+
+    screen.blit(img, (0, 0))
     pygame.display.set_caption('DLwithTL')
     # screen.fill((21, 116, 163))
     # text = 'Supported Keys:\n'
@@ -207,14 +250,15 @@ def pygame_connect(H=925, W=380):
 
     return screen
 
-def check_user_input(active, automate, lr, epsilon, agent, network_path, client, old_posit, initZ):
+def check_user_input(active, automate, lr, epsilon, agent, network_path, client, old_posit, initZ, phase, fig_z, fig_nav, env_folder):
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
             active = False
             pygame.quit()
 
-        if event.type == pygame.KEYDOWN:
+        # Training keys control
+        if event.type == pygame.KEYDOWN and phase =='train':
             if event.key == pygame.K_l:
                 # Load the parameters - epsilon
                 cfg = read_cfg(config_filename='configs/config.cfg', verbose=False)
@@ -275,6 +319,18 @@ def check_user_input(active, automate, lr, epsilon, agent, network_path, client,
                 elif event.key == pygame.K_h:
                     client.reset()
                 # agent.take_action(action)
+
+        elif event.type == pygame.KEYDOWN and phase == 'infer':
+            if event.key == pygame.K_s:
+                # Save the figures
+                file_path = env_folder + 'results/'
+                fig_z.savefig(file_path+'altitude_variation.png', dpi=1000)
+                fig_nav.savefig(file_path+'navigation.png', dpi=1000)
+                print('Figures saved')
+
+            if event.key == pygame.K_BACKSPACE:
+                client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.1)
+                automate = automate ^ True
 
     return active, automate, lr, client
 

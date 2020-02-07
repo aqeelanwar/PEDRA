@@ -1,5 +1,8 @@
+*.npy
+*.pyc
 *.xml
 .idea/
 models/
 unreal_envs/
-*.pyc
+scratch.py
+

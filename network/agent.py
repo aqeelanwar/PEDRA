@@ -1,7 +1,5 @@
 import numpy as np
 import os
-import sys
-sys.path.append("..")
 import tensorflow as tf
 import cv2
 from network.network import *
@@ -12,11 +10,10 @@ from util.transformations import euler_from_quaternion
 from PIL import Image
 from network.loss_functions import *
 from numpy import linalg as LA
-from aux_functions import print_str
+
 class DeepAgent():
     def __init__(self, cfg, client, name):
-        print_str(name)
-        print('Loading')
+        print('------------------------------ ' +str(name)+ ' ------------------------------')
         self.g = tf.Graph()
         self.iter=0
         with self.g.as_default():
@@ -60,8 +57,6 @@ class DeepAgent():
         if cfg.custom_load:
             print('Loading weights from: ', cfg.custom_load_path)
             self.load_network(cfg.custom_load_path)
-        else:
-            print('Loading imagenet weights')
 
 
         # print()
@@ -129,7 +124,7 @@ class DeepAgent():
             # self.action_array[action[0].astype(int)]+=1
         return action.astype(int)
 
-    def take_action(self, action, num_actions):
+    def take_action(self, action, num_actions, phase):
         # Set Paramaters
         fov_v = 45 * np.pi / 180
         fov_h = 80 * np.pi / 180
@@ -137,7 +132,6 @@ class DeepAgent():
 
         ignore_collision = False
         sqrt_num_actions = np.sqrt(num_actions)
-
 
         posit = self.client.simGetVehiclePose()
         pos = posit.position
@@ -153,25 +147,42 @@ class DeepAgent():
         theta = fov_v/sqrt_num_actions * (theta_ind - (sqrt_num_actions - 1) / 2)
         psi = fov_h / sqrt_num_actions * (psi_ind - (sqrt_num_actions - 1) / 2)
 
-        noise_theta = (fov_v / sqrt_num_actions) / 6
-        noise_psi = (fov_h / sqrt_num_actions) / 6
-
-        psi = psi + random.uniform(-1, 1)*noise_psi
-        theta = theta + random.uniform(-1, 1)*noise_theta
 
         # print('Theta: ', theta * 180 / np.pi, end='')
         # print(' Psi: ', psi * 180 / np.pi)
 
 
+        if phase == 'train':
+            noise_theta = (fov_v / sqrt_num_actions) / 6
+            noise_psi = (fov_h / sqrt_num_actions) / 6
 
+            psi = psi + random.uniform(-1, 1) * noise_psi
+            theta = theta + random.uniform(-1, 1) * noise_theta
 
-        x = pos.x_val + r * np.cos(alpha + psi)
-        y = pos.y_val + r * np.sin(alpha + psi)
-        z = pos.z_val + r * np.sin(theta)  # -ve because Unreal has -ve z direction going upwards
+            x = pos.x_val + r * np.cos(alpha + psi)
+            y = pos.y_val + r * np.sin(alpha + psi)
+            z = pos.z_val + r * np.sin(theta)  # -ve because Unreal has -ve z direction going upwards
 
-        self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
-                                 ignore_collison=ignore_collision)
+            self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
+                                     ignore_collison=ignore_collision)
+        elif phase == 'infer':
+            r_infer=0.5
+            vx = r_infer * np.cos(alpha + psi)
+            vy = r_infer * np.sin(alpha + psi)
+            vz = r_infer * np.sin(theta)
+            # TODO
+            # Take average of previous velocities and current to smoothen out drone movement.
+            self.client.moveByVelocityAsync(vx=vx, vy=vy, vz=vz, duration=1,
+                                       drivetrain=airsim.DrivetrainType.MaxDegreeOfFreedom,
+                                       yaw_mode=airsim.YawMode(is_rate=False,
+                                                               yaw_or_rate=180 * (alpha + psi) / np.pi))
+            # self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.01).join()
+            # print("")
+            # print("Throttle:", throttle)
+            # print('Yaw:', yaw)
 
+            # self.client.moveByAngleThrottleAsync(pitch=-0.015, roll=0, throttle=throttle, yaw_rate=yaw, duration=0.2).join()
+            # self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.005)
     def get_depth(self):
         responses = self.client.simGetImages([airsim.ImageRequest(2, airsim.ImageType.DepthVis, False, False)])
         depth = []
