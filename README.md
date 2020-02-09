@@ -228,6 +228,21 @@ DRLwithTL is a transfer learning based approach to reduce on-board computation r
 PEDRA's config file can be used to carry out DRLwithTL. The parameter train_type can be used to dictate how many layers from the end needs to be trained.
 
 
+
+# FAQs
+
+### Setting up initial positions in an environment:
+Following module can be used to dictate initial positions for drone in the environment
+```
+environments/initial_positions.py
+```
+
+1. Locate the python module with the name of the environment and add to the orig_ip array. Make sure that you don't modify the first initial position commented as __Player start__.
+2. In order to add a position from the environment, edit the AirSim's settings.json file to reflect the mode to be __ComputerVision__
+3. Locate the .exe file of the environment and execute it. Use the arrow keys to navigate to the position to be set as initial position.
+4. Hit the key 'P'. The unreal coordinates of the current position will be shown at the left top of the screen
+5. Use those three values as a new member of the array orig_ip
+
 # Citing
 If you find this repository useful for your research please use the following bibtex citations
 
