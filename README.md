@@ -76,6 +76,8 @@ Following environments are available for download from the link above
 * Indoor FrogEyes Environment
 * Indoor GT Environment
 * Indoor Complex Environment
+* Indoor UpDown Environment
+* Indoor Cloud Environment
 
 
 The link above will help you download the packaged version of the environment for 64-bit windows. Save the folder in the unreal_env folder (create the unreal_env folder if it doesn't exist).
