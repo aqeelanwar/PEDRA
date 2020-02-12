@@ -237,7 +237,7 @@ Following module can be used to dictate initial positions for drone in the envir
 environments/initial_positions.py
 ```
 
-1. Locate the python module with the name of the environment and add to the orig_ip array. Make sure that you don't modify the first initial position commented as __Player start__.
+1. Locate the python module with the name of the environment and add to the orig_ip array. Each member of the orig_ip array is one initial position corresponding to (x, y, theta) where x and y are the positional coordinates and theta is the orientation (yaw). Make sure that you don't modify the first initial position commented as __Player start__.
 2. In order to add a position from the environment, edit the AirSim's settings.json file to reflect the mode to be __ComputerVision__
 3. Locate the .exe file of the environment and execute it. Use the arrow keys to navigate to the position to be set as initial position.
 4. Hit the key 'P'. The unreal coordinates of the current position will be shown at the left top of the screen
