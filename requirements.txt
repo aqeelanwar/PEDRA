@@ -27,7 +27,7 @@ python-dateutil==2.8.0
 six==1.12.0
 tensorboard==1.12.0
 tensorflow-estimator==2.0.0
-tensorflow-gpu==1.4.0
+tensorflow-gpu==1.15.2
 termcolor==1.1.0
 tornado==4.5.3
 Werkzeug==0.16.0
