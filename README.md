@@ -83,8 +83,8 @@ Following environments are available for download from the link above
 The link above will help you download the packaged version of the environment for 64-bit windows. Save the folder in the unreal_env folder (create the unreal_env folder if it doesn't exist).
 
 ```
-PEDRA/unreal_env/<downloaded-environment-folder>    # Generic
-PEDRA/unreal_env/indoor_cloud                       # Example
+PEDRA/unreal_envs/<downloaded-environment-folder>    # Generic
+PEDRA/unreal_envs/indoor_cloud                       # Example
 ```
 
 
