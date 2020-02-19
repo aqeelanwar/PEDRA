@@ -1,11 +1,11 @@
-import sys
+import sys, cv2
 from network.agent import DeepAgent
 from environments.initial_positions import *
 import psutil
 from os import getpid
 from network.Memory import Memory
 from aux_functions import *
-from configs.read_cfg import read_cfg, read_env_cfg
+from configs.read_cfg import read_cfg, read_env_cfg, generate_json
 
 # TF Debug message suppressed
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -15,6 +15,11 @@ process = psutil.Process(getpid())
 
 # Read the config file
 cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
+generate_json(cfg)
+# Settngs.json
+
+# settings_cfg = read_settings_cfg(config_filename='', verbose = False)
+mode = 'Multirotor'
 
 # Start the environment
 env_process, env_folder = start_environment(env_name=cfg.env_name)
@@ -38,7 +43,7 @@ client, old_posit = connect_drone(ip_address=cfg.ip_address, phase=cfg.phase)
 fig_z=[]
 fig_nav=[]
 agent = DeepAgent(cfg, client, name='DQN')
-if cfg.phase=='train':
+if cfg.phase == 'train':
     target_agent = DeepAgent(cfg, client, name='Target')
 
 elif cfg.phase == 'infer':
@@ -121,13 +126,12 @@ while active:
                     xxx = client.simGetVehiclePose()
                     # environ = environ^True
 
-
                 action, action_type, cfg.epsilon, qvals = policy(cfg.epsilon, current_state, iter, cfg.epsilon_saturation, cfg.epsilon_model,  cfg.wait_before_train, cfg.num_actions, agent)
 
                 action_word = translate_action(action, cfg.num_actions)
                 # Take the action
-                agent.take_action(action, cfg.num_actions, phase=cfg.phase)
-                time.sleep(0.05)
+                agent.take_action(action, cfg.num_actions, mode=mode)
+                # time.sleep(0.05)
 
                 posit = client.simGetVehiclePose()
 
@@ -178,7 +182,7 @@ while active:
                             agent.train_n(old_states, Qvals,actions,  cfg.batch_size, cfg.dropout_rate, cfg.lr, cfg.epsilon, iter)
 
                     if iter % cfg.update_target_interval == 0:
-                        agent.take_action([-1], cfg.num_actions, phase=cfg.phase)
+                        agent.take_action([-1], cfg.num_actions, mode=mode)
                         print('Switching Target Network')
                         choose = not choose
                         agent.save_network(cfg.network_path)
@@ -205,6 +209,9 @@ while active:
                 f.write(s_log+'\n')
 
                 last_crash=last_crash+1
+                cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
+                cv2.waitKey(1)
+
 
                 if crash:
                     agent.return_plot(ret, episode, int(level/3), mem_percent, iter, distance)
@@ -268,7 +275,7 @@ while active:
                                                                       cfg.epsilon_saturation, 'inference',
                                                                       cfg.wait_before_train, cfg.num_actions, agent)
                     # Take continuous action
-                    agent.take_action(action, cfg.num_actions, phase=cfg.phase)
+                    agent.take_action(action, cfg.num_actions, phase=mode)
                     old_posit=posit
 
 
