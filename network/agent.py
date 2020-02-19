@@ -124,7 +124,7 @@ class DeepAgent():
             # self.action_array[action[0].astype(int)]+=1
         return action.astype(int)
 
-    def take_action(self, action, num_actions, mode):
+    def take_action(self, action, num_actions, SimMode):
         # Set Paramaters
         fov_v = 22.5 * np.pi / 180
         fov_h = 40 * np.pi / 180
@@ -148,7 +148,7 @@ class DeepAgent():
         psi = fov_h / sqrt_num_actions * (psi_ind - (sqrt_num_actions - 1) / 2)
 
 
-        if mode == 'ComputerVision':
+        if SimMode == 'ComputerVision':
             noise_theta = (fov_v / sqrt_num_actions) / 6
             noise_psi = (fov_h / sqrt_num_actions) / 6
 
@@ -161,7 +161,7 @@ class DeepAgent():
 
             self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
                                      ignore_collison=ignore_collision)
-        elif mode == 'Multirotor':
+        elif SimMode == 'Multirotor':
             r_infer = 1
             vx = r_infer * np.cos(alpha + psi)
             vy = r_infer * np.sin(alpha + psi)

@@ -16,10 +16,7 @@ process = psutil.Process(getpid())
 # Read the config file
 cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
 generate_json(cfg)
-# Settngs.json
 
-# settings_cfg = read_settings_cfg(config_filename='', verbose = False)
-mode = 'Multirotor'
 
 # Start the environment
 env_process, env_folder = start_environment(env_name=cfg.env_name)
@@ -130,7 +127,7 @@ while active:
 
                 action_word = translate_action(action, cfg.num_actions)
                 # Take the action
-                agent.take_action(action, cfg.num_actions, mode=mode)
+                agent.take_action(action, cfg.num_actions, SimMode=cfg.SimMode)
                 # time.sleep(0.05)
 
                 posit = client.simGetVehiclePose()
@@ -182,7 +179,7 @@ while active:
                             agent.train_n(old_states, Qvals,actions,  cfg.batch_size, cfg.dropout_rate, cfg.lr, cfg.epsilon, iter)
 
                     if iter % cfg.update_target_interval == 0:
-                        agent.take_action([-1], cfg.num_actions, mode=mode)
+                        agent.take_action([-1], cfg.num_actions, SimMode=cfg.SimMode)
                         print('Switching Target Network')
                         choose = not choose
                         agent.save_network(cfg.network_path)
@@ -209,8 +206,8 @@ while active:
                 f.write(s_log+'\n')
 
                 last_crash=last_crash+1
-                cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
-                cv2.waitKey(1)
+                # cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
+                # cv2.waitKey(1)
 
 
                 if crash:
@@ -275,7 +272,7 @@ while active:
                                                                       cfg.epsilon_saturation, 'inference',
                                                                       cfg.wait_before_train, cfg.num_actions, agent)
                     # Take continuous action
-                    agent.take_action(action, cfg.num_actions, phase=mode)
+                    agent.take_action(action, cfg.num_actions, SimMode=cfg.SimMode)
                     old_posit=posit
 
 

@@ -42,18 +42,27 @@ def generate_json(cfg):
     PawnPaths["DefaultQuadrotor"]['PawnBP'] = ''' Class'/AirSim/Blueprints/BP_''' + cfg.drone + '''.BP_''' + cfg.drone + '''_C' '''
     data['PawnPaths']=PawnPaths
 
-    data['CameraDefaults'] = []
-    CaptureSettings=[]
+    CameraDefaults = {}
+    CameraDefaults['CaptureSettings']=[]
+    # CaptureSettings=[]
 
     camera = {}
     camera['ImageType'] = 0
     camera['Width'] = cfg.width
     camera['Height'] = cfg.height
-    camera['FOV_degrees'] = cfg.fov_degree
-    CaptureSettings.append(camera)
-    data['CameraDefaults'].append(CaptureSettings)
+    camera['FOV_Degrees'] = cfg.fov_degrees
+
+    CameraDefaults['CaptureSettings'].append(camera)
+
+    camera = {}
     camera['ImageType'] = 3
-    data['CameraDefaults'].append(CaptureSettings)
+    camera['Width'] = cfg.width
+    camera['Height'] = cfg.height
+    camera['FOV_Degrees'] = cfg.fov_degrees
+
+    CameraDefaults['CaptureSettings'].append(camera)
+
+    data['CameraDefaults']=CameraDefaults
     with open(filename, 'w') as outfile:
         json.dump(data, outfile)
 

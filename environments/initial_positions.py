@@ -220,7 +220,7 @@ def initial_positions(name):
     for i in range(0, len(orig_ip)):
         x1 = (orig_ip[i][0]-player_start_unreal[0])/100
         y1 = (orig_ip[i][1]-player_start_unreal[1])/100
-        z1 = 1.5
+        z1 = 0
         # z1 = initZ # in case of computervision mode
         pitch = 0
         roll = 0
