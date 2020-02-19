@@ -26,15 +26,6 @@ The current version of PEDRA supports Windows and requires python3. It’s advis
 git clone https://github.com/aqeelanwar/PEDRA.git
 ```
 
-## Download imagenet weights for AlexNet
-The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
-
-[Download imagenet.npy](https://drive.google.com/open?id=1Ei4mCzjfLY5ql6ILIUHaCtAR2XF6BtAM)
-
-Once downloaded, place it in
-```
-models/imagenet.npy
-```
 
 ## Install required packages
 The provided requirements.txt file can be used to install all the required packages. Use the following command
@@ -50,19 +41,23 @@ You can follow the guidelines in the link below to install Unreal Engine on your
 
 [Instructions on installing Unreal engine](https://docs.unrealengine.com/en-US/GettingStarted/Installation/index.html)
 
-## Install AirSim
-AirSim is an open-source plugin for Unreal Engine developed by Microsoft for agents (drones and cars) with physically and visually realistic simulations. In order to interface between Python3 and the simulated environment, AirSim needs to be installed. It can be downloaded from the link below
-
-[Instructions on installing AirSim](https://github.com/microsoft/airsim)
-
-
-
 
 # Running PEDRA
 Once you have the required packages and software downloaded and running, you can take the following steps to run the code
 
+## Download imagenet weights for AlexNet
+The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
+
+[Download imagenet.npy](https://drive.google.com/open?id=1Ei4mCzjfLY5ql6ILIUHaCtAR2XF6BtAM)
+
+Once downloaded, place it in
+```
+models/imagenet.npy
+```
+
+
 ## Create/Download a simulated environment
-You can either manually create your environment using Unreal Engine, or can download one of the sample environments from the link below and run it.
+You can either manually create your environment using Unreal Engine (See FAQ below to install AirSim Plugin if you plan on creating your own environment), or can download one of the sample environments from the link below and run it.
 
 [Download Environments](https://drive.google.com/open?id=1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z)
 
@@ -231,6 +226,11 @@ PEDRA's config file can be used to carry out DRLwithTL. The parameter train_type
 
 # FAQs
 
+
+### Installing AirSim Plugin
+AirSim is an open-source plugin for Unreal Engine developed by Microsoft for agents (drones and cars) with physically and visually realistic simulations. In case you decide on creating your own environments on Unreal Engine (and not use the ones provided for download) you need to install the plugin into Unreal Engine. Details on how to install the plugin can be found below.
+
+[Instructions on installing AirSim](https://github.com/microsoft/airsim)
 ### Setting up initial positions in an environment:
 Following module can be used to dictate initial positions for drone in the environment
 ```
