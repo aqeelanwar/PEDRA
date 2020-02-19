@@ -104,12 +104,22 @@ notepad config.cfg (#for windows)
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
-| run_name         	| Name for the current                                                              	| Any value                        	|
+| run_name         	| Name for the current                                                              	| Any value                       	|
 | custom_load      	| Dictates if user wants to load the network with custom weights                    	| True/False                       	|
 | custom_load_path 	| If custom_load is set to True, this dictates the path of the weights to be loaded 	| Relative path to weights         	|
 | env_type         	| Type of the environment (to be used in future versions)                           	| indoor/outdoor                   	|
 | env_name         	| Name of the environment to be used in the simulation                              	| indoor_cloud, indoor_techno etc. 	|
 | phase            	| Dictates what mode do you want to run the simulation in                           	| train / infer                    	|
+| SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
+| drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
+| ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
+
+### Reinforcement Learning training parameters [camera_params]:
+| Parameter        	| Explanation                                                                       	| Possible values                  	|
+|------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
+| width         	  | Width of the camera frame                                                           | Any integer > 0                  	|
+| height      	    | Height of the camera frame                    	                                    | Any integer > 0                   |
+| fov_degrees 	    | Camera field of viewed in degres                                                    | Any value >0                    	|
 
 ### Simulation Parameters [simulation_params]:
 
