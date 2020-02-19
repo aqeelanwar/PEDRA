@@ -29,10 +29,19 @@ git clone https://github.com/aqeelanwar/PEDRA.git
 
 ## Install required packages
 The provided requirements.txt file can be used to install all the required packages. Use the following command
+
+### System with NVIDIA GPU
 ```
 cd PEDRA
-pip install –r requirements.txt
+pip install –r requirements_gpu.txt
 ```
+
+### System without NVIDIA GPU
+```
+cd PEDRA
+pip install –r requirements_cpu.txt
+```
+
 This will install the required packages in the activated python environment.
 
 
