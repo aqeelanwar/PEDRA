@@ -17,7 +17,6 @@ process = psutil.Process(getpid())
 cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
 generate_json(cfg)
 
-
 # Start the environment
 env_process, env_folder = start_environment(env_name=cfg.env_name)
 
@@ -27,7 +26,7 @@ screen = pygame_connect(phase = cfg.phase)
 # Load the initial positions for the environment
 reset_array, level_name, crash_threshold, initZ = initial_positions(cfg.env_name)
 
-# Generate path where the weighst will be saved
+# Generate path where the weights will be saved
 cfg = save_network_path(cfg=cfg)
 
 # Replay Memory for RL
@@ -104,7 +103,7 @@ while active:
 
                     level = (level + 1) % len(reset_array)
 
-                    print('Transferring to level: ', level ,' - ', level_name[level])
+                    print('Transferring to level: ', level,' - ', level_name[level])
 
                     if times_switch < len(reset_array):
                         reset_to_initial(level, reset_array, client)
