@@ -24,47 +24,47 @@ def read_env_cfg(config_filename = 'configs/main.cfg'):
 
     return cfg
 
-def generate_json(cfg):
-    path = os.path.expanduser('~\Documents\Airsim')
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    filename = path + '\settings.json'
-
-    data = {}
-    data['SettingsVersion'] = 1.2
-    data['LocalHostIp'] = cfg.ip_address
-    data['SimMode'] = cfg.SimMode
-    data['ClockSpeed'] = cfg.ClockSpeed
-
-    PawnPaths = {}
-    PawnPaths["DefaultQuadrotor"] = {}
-    PawnPaths["DefaultQuadrotor"]['PawnBP'] = ''' Class'/AirSim/Blueprints/BP_''' + cfg.drone + '''.BP_''' + cfg.drone + '''_C' '''
-    data['PawnPaths']=PawnPaths
-
-    CameraDefaults = {}
-    CameraDefaults['CaptureSettings']=[]
-    # CaptureSettings=[]
-
-    camera = {}
-    camera['ImageType'] = 0
-    camera['Width'] = cfg.width
-    camera['Height'] = cfg.height
-    camera['FOV_Degrees'] = cfg.fov_degrees
-
-    CameraDefaults['CaptureSettings'].append(camera)
-
-    camera = {}
-    camera['ImageType'] = 3
-    camera['Width'] = cfg.width
-    camera['Height'] = cfg.height
-    camera['FOV_Degrees'] = cfg.fov_degrees
-
-    CameraDefaults['CaptureSettings'].append(camera)
-
-    data['CameraDefaults']=CameraDefaults
-    with open(filename, 'w') as outfile:
-        json.dump(data, outfile)
+# def generate_json(cfg):
+#     path = os.path.expanduser('~\Documents\Airsim')
+#     if not os.path.exists(path):
+#         os.makedirs(path)
+#
+#     filename = path + '\settings.json'
+#
+#     data = {}
+#     data['SettingsVersion'] = 1.2
+#     data['LocalHostIp'] = cfg.ip_address
+#     data['SimMode'] = cfg.SimMode
+#     data['ClockSpeed'] = cfg.ClockSpeed
+#
+#     PawnPaths = {}
+#     PawnPaths["DefaultQuadrotor"] = {}
+#     PawnPaths["DefaultQuadrotor"]['PawnBP'] = ''' Class'/AirSim/Blueprints/BP_''' + cfg.drone + '''.BP_''' + cfg.drone + '''_C' '''
+#     data['PawnPaths']=PawnPaths
+#
+#     CameraDefaults = {}
+#     CameraDefaults['CaptureSettings']=[]
+#     # CaptureSettings=[]
+#
+#     camera = {}
+#     camera['ImageType'] = 0
+#     camera['Width'] = cfg.width
+#     camera['Height'] = cfg.height
+#     camera['FOV_Degrees'] = cfg.fov_degrees
+#
+#     CameraDefaults['CaptureSettings'].append(camera)
+#
+#     camera = {}
+#     camera['ImageType'] = 3
+#     camera['Width'] = cfg.width
+#     camera['Height'] = cfg.height
+#     camera['FOV_Degrees'] = cfg.fov_degrees
+#
+#     CameraDefaults['CaptureSettings'].append(camera)
+#
+#     data['CameraDefaults']=CameraDefaults
+#     with open(filename, 'w') as outfile:
+#         json.dump(data, outfile)
 
 
 
@@ -88,40 +88,13 @@ def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     cfg.SimMode = str(config.get('general_params', 'SimMode'))
     cfg.drone = str(config.get('general_params', 'drone'))
     cfg.ClockSpeed = int(config.get('general_params', 'ClockSpeed').split(',')[0])
-    # [Simulation Parameters]
-    if str(config.get('simulation_params', 'load_data')) =='True':
-        cfg.load_data = True
-    else:
-        cfg.load_data = False
-    cfg.load_data_path = str(config.get('simulation_params', 'load_data_path'))
-    cfg.ip_address = str(config.get('simulation_params', 'ip_address'))
-
+    cfg.algorithm = str(config.get('general_params', 'algorithm'))
+    cfg.ip_address = str(config.get('general_params', 'ip_address'))
 
     # [Camera_params]
     cfg.width = int(config.get('camera_params', 'width').split(',')[0])
     cfg.height = int(config.get('camera_params', 'height').split(',')[0])
     cfg.fov_degrees = int(config.get('camera_params', 'fov_degrees').split(',')[0])
-
-
-    # [RL Parameters]
-    cfg.input_size = int(config.get('RL_params', 'input_size').split(',')[0])
-    cfg.num_actions = int(config.get('RL_params', 'num_actions').split(',')[0])
-    cfg.train_type = config.get('RL_params', 'train_type')
-    cfg.wait_before_train = int(config.get('RL_params', 'wait_before_train').split(',')[0])
-    cfg.max_iters = int(config.get('RL_params', 'max_iters').split(',')[0])
-    cfg.buffer_len = int(config.get('RL_params', 'buffer_len').split(',')[0])
-    cfg.batch_size = int(config.get('RL_params', 'batch_size').split(',')[0])
-    cfg.epsilon_saturation = int(config.get('RL_params', 'epsilon_saturation').split(',')[0])
-    cfg.crash_thresh = float(config.get('RL_params', 'crash_thresh').split(',')[0])
-    cfg.gamma = float(config.get('RL_params', 'gamma').split(',')[0])
-    cfg.dropout_rate = float(config.get('RL_params', 'dropout_rate').split(',')[0])
-    cfg.lr = float(config.get('RL_params', 'learning_rate').split(',')[0])
-    cfg.switch_env_steps = int(config.get('RL_params', 'switch_env_steps').split(',')[0])
-    cfg.epsilon_model = config.get('RL_params', 'epsilon_model')
-    cfg.Q_clip = bool(config.get('RL_params', 'Q_clip'))
-    cfg.train_interval = int(config.get('RL_params', 'train_interval').split(',')[0])
-    cfg.update_target_interval = int(config.get('RL_params', 'update_target_interval').split(',')[0])
-
 
     if verbose and cfg.phase=='train':
         print('------------------------------ Config File ------------------------------')
