@@ -4,6 +4,7 @@
 
 import configparser as cp
 from dotmap import DotMap
+import os, json
 
 def read_env_cfg(config_filename = 'configs/main.cfg'):
     # Load from config file
@@ -23,6 +24,41 @@ def read_env_cfg(config_filename = 'configs/main.cfg'):
 
     return cfg
 
+def generate_json(cfg):
+    path = os.path.expanduser('~\Documents\Airsim')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    filename = path + '\settings.json'
+
+    data = {}
+    data['SettingsVersion'] = 1.2
+    data['LocalHostIp'] = cfg.ip_address
+    data['SimMode'] = cfg.SimMode
+    data['ClockSpeed'] = cfg.ClockSpeed
+
+    PawnPaths = {}
+    PawnPaths["DefaultQuadrotor"] = {}
+    PawnPaths["DefaultQuadrotor"]['PawnBP'] = ''' Class'/AirSim/Blueprints/BP_''' + cfg.drone + '''.BP_''' + cfg.drone + '''_C' '''
+    data['PawnPaths']=PawnPaths
+
+    data['CameraDefaults'] = []
+    CaptureSettings=[]
+
+    camera = {}
+    camera['ImageType'] = 0
+    camera['Width'] = cfg.width
+    camera['Height'] = cfg.height
+    camera['FOV_degrees'] = cfg.fov_degree
+    CaptureSettings.append(camera)
+    data['CameraDefaults'].append(CaptureSettings)
+    camera['ImageType'] = 3
+    data['CameraDefaults'].append(CaptureSettings)
+    with open(filename, 'w') as outfile:
+        json.dump(data, outfile)
+
+
+
 
 def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     # Load from config file
@@ -40,7 +76,9 @@ def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
     cfg.env_type = config.get('general_params', 'env_type')
     cfg.env_name = config.get('general_params', 'env_name')
     cfg.phase = config.get('general_params', 'phase')
-
+    cfg.SimMode = str(config.get('general_params', 'SimMode'))
+    cfg.drone = str(config.get('general_params', 'drone'))
+    cfg.ClockSpeed = int(config.get('general_params', 'ClockSpeed').split(',')[0])
     # [Simulation Parameters]
     if str(config.get('simulation_params', 'load_data')) =='True':
         cfg.load_data = True
@@ -48,6 +86,13 @@ def read_cfg(config_filename = 'configs/main.cfg', verbose = False):
         cfg.load_data = False
     cfg.load_data_path = str(config.get('simulation_params', 'load_data_path'))
     cfg.ip_address = str(config.get('simulation_params', 'ip_address'))
+
+
+    # [Camera_params]
+    cfg.width = int(config.get('camera_params', 'width').split(',')[0])
+    cfg.height = int(config.get('camera_params', 'height').split(',')[0])
+    cfg.fov_degrees = int(config.get('camera_params', 'fov_degrees').split(',')[0])
+
 
     # [RL Parameters]
     cfg.input_size = int(config.get('RL_params', 'input_size').split(',')[0])

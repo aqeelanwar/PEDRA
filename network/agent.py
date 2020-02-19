@@ -124,10 +124,10 @@ class DeepAgent():
             # self.action_array[action[0].astype(int)]+=1
         return action.astype(int)
 
-    def take_action(self, action, num_actions, phase):
+    def take_action(self, action, num_actions, mode):
         # Set Paramaters
-        fov_v = 45 * np.pi / 180
-        fov_h = 80 * np.pi / 180
+        fov_v = 22.5 * np.pi / 180
+        fov_h = 40 * np.pi / 180
         r = 0.4
 
         ignore_collision = False
@@ -148,11 +148,7 @@ class DeepAgent():
         psi = fov_h / sqrt_num_actions * (psi_ind - (sqrt_num_actions - 1) / 2)
 
 
-        # print('Theta: ', theta * 180 / np.pi, end='')
-        # print(' Psi: ', psi * 180 / np.pi)
-
-
-        if phase == 'train':
+        if mode == 'ComputerVision':
             noise_theta = (fov_v / sqrt_num_actions) / 6
             noise_psi = (fov_h / sqrt_num_actions) / 6
 
@@ -165,8 +161,8 @@ class DeepAgent():
 
             self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
                                      ignore_collison=ignore_collision)
-        elif phase == 'infer':
-            r_infer=0.5
+        elif mode == 'Multirotor':
+            r_infer = 1
             vx = r_infer * np.cos(alpha + psi)
             vy = r_infer * np.sin(alpha + psi)
             vz = r_infer * np.sin(theta)
@@ -446,7 +442,7 @@ class DeepAgent():
         print('Saving weights in .npy format')
         for i in range(0, 30):
             # weights[name[i]] = self.sess.run(self.sess.graph._collections['variables'][i])
-            if i==0:
+            if i == 0:
                 str1 = 'Variable:0'
             else:
                 str1 = 'Variable_'+str(i)+':0'

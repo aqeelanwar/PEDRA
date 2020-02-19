@@ -196,14 +196,14 @@ def connect_drone(ip_address='127.0.0.0', phase='infer'):
     client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
     client.confirmConnection()
     old_posit = client.simGetVehiclePose()
-    if phase == 'train':
-        client.simSetVehiclePose(
-            airsim.Pose(airsim.Vector3r(0, 0, 0), old_posit.orientation),
-            ignore_collison=True)
-    elif phase == 'infer':
-        client.enableApiControl(True)
-        client.armDisarm(True)
-        client.takeoffAsync().join()
+    # if phase == 'train':
+    #     client.simSetVehiclePose(
+    #         airsim.Pose(airsim.Vector3r(0, 0, 0), old_posit.orientation),
+    #         ignore_collison=True)
+    # elif phase == 'infer':
+    client.enableApiControl(True)
+    client.armDisarm(True)
+    client.takeoffAsync().join()
 
     return client, old_posit
 
