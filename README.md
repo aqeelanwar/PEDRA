@@ -141,14 +141,12 @@ python main.py
 
 Running main.py carries out the following steps
 * Attempt to load the config file
-* Attempt to connect with the Unreal Engine (the indoor_long environment must be running for python to connect with the environment, otherwise connection refused warning will appear — The code won’t proceed unless a connection is established)
-* Attempt to create two instances of the DNN (Double DQN is being used) and initialize them with the selected weights.
+* Attempt to generate the settings.json file required to specify the environment parameters
+* Attempt to start the 3D environment
 * Attempt to initialize Pygame screen for user interface
-Start the DRL algorithm
+* Attempt to begin the algorithm
 
-At this point, the drone can be seen moving around in the environment collecting data-points. The block diagram below shows the DRL algorithm used.
-
-![Cover Photo](/images/block_diag.png)
+At this point, the drone can be seen moving around in the environment
 
 #### Viewing learning parameters using tensorboard
 During simulation, RL parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by

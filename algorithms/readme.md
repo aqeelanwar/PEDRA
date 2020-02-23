@@ -2,6 +2,8 @@
 ## 1. Deep Q-learning
 Value based deep Q learning with Double DQN and prioritized experienced replay
 
+### Block Diagram
+![Cover Photo](/images/block_diag.png)
 
 
 ### Simulation Parameters [simulation_params]:
