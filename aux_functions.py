@@ -19,19 +19,19 @@ def close_env(env_process):
     process.kill()
 
 
-
-def save_network_path(cfg):
+def save_network_path(cfg, algorithm_cfg):
     # Save the network to the directory network_path
     weights_type = 'Imagenet'
-    if cfg.custom_load == True:
-        cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + 'CustomLoad/' + cfg.train_type + '/' + cfg.train_type
+    if algorithm_cfg.custom_load == True:
+        algorithm_cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + 'CustomLoad/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
     else:
-        cfg.network_path = 'models/trained/' + '/' + cfg.env_type + '/' + cfg.env_name + '/' + weights_type + '/' + cfg.train_type + '/' + cfg.train_type
+        algorithm_cfg.network_path = 'models/trained/' + '/' + cfg.env_type + '/' + cfg.env_name + '/' + weights_type + '/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
 
-    if not os.path.exists(cfg.network_path):
-        os.makedirs(cfg.network_path)
+    if not os.path.exists(algorithm_cfg.network_path):
+        os.makedirs(algorithm_cfg.network_path)
 
-    return cfg
+    return cfg, algorithm_cfg
+
 
 
 def start_environment(env_name):

@@ -104,7 +104,7 @@ notepad config.cfg (#for windows)
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
-| run_name         	| Name for the current                                                              	| Any value                       	|
+| run_name         	| Name for the current simulation                                                   	| Any value                       	|
 | custom_load      	| Dictates if user wants to load the network with custom weights                    	| True/False                       	|
 | custom_load_path 	| If custom_load is set to True, this dictates the path of the weights to be loaded 	| Relative path to weights         	|
 | env_type         	| Type of the environment (to be used in future versions)                           	| indoor/outdoor                   	|
@@ -113,43 +113,20 @@ notepad config.cfg (#for windows)
 | SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
 | drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
 | ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
+| algorithm         | The algorithm needs to be implemented. Details in PEDRA/algorithms/readme.md        | e.g. DeepQLearning                |
+| ip_address        | Dictates the simulation speed                                                       | Any value > 0                     |
 
-### Reinforcement Learning training parameters [camera_params]:
+### Camera Parameters [camera_params]:
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
 | width         	  | Width of the camera frame                                                           | Any integer > 0                  	|
 | height      	    | Height of the camera frame                    	                                    | Any integer > 0                   |
-| fov_degrees 	    | Camera field of viewed in degres                                                    | Any value >0                    	|
+| fov_degrees 	    | Camera field of viewed in degrees                                                   | Any value >0                    	|
 
-### Simulation Parameters [simulation_params]:
 
-| Parameter      	| Explanation                                           	| Possible values           	|
-|----------------	|-------------------------------------------------------	|---------------------------	|
-| ip_address     	| IP Address for the simulation                         	| 127.0.0.1 etc.            	|
-| load_data      	| Dictates if to load data into the replay memory       	| True / False              	|
-| load_data_path 	| The path to load the data from into the replay memory 	| Relative path to the data 	|
+## Edit the algorithm configuration file (Optional)
+Based on the algorithm selected in the general_param category of the main config file, algorithm specific config file needs to be edited for user provided parameters. More details on this can be found [here](/algorithms/readme.md)
 
-### Reinforcement Learning training parameters [RL_params]:
-
-| Parameter              	| Explanation                                                                                     	| Possible values          	|
-|------------------------	|-------------------------------------------------------------------------------------------------	|--------------------------	|
-| input_size             	| The dimensions of the input image into the network                                              	| Any positive integer     	|
-| num_actions            	| The size of the action space                                                                    	| 25, 400 etc              	|
-| train_type             	| Dictates number of trainable layers                                                             	| e2e, last4, last3, last2 	|
-| wait_before_train      	| The number of iterations to wait before traiining can begin                                     	| Any positive integer     	|
-| max_iters              	| Maximum number of training iterations                                                           	| Any positive integer     	|
-| buffer_len             	| The length of the replay buffer                                                                 	| Any positive integer     	|
-| batch_size             	| The batch size for training                                                                     	| 8, 16, 32, 64 etc        	|
-| epsilon_saturation     	| The number of iteration at which the epsilon reaches its maximum value                          	| Any positive integer     	|
-| crash_thresh           	| The average depth below which the drone is considered crashed                                   	| 0.8, 1.3 etc             	|
-| Q_clip                 	| Dictates if to clip the updated Q value in the Bellman equation                                 	| True, False              	|
-| train_interval         	| The training happens after every train_interval iterations                                      	| 1,3,5 etc                	|
-| update_target_interval 	| Copies network weights from behavior to target network every update_target_interval iterations 	| Any positive integer     	|
-| gamma                  	| The value of gamma in the Bellman equation                                                      	| Between 0 and 1          	|
-| dropout_rate           	| The drop out rate for the layers in the network                                                 	| Between 0 to 1           	|
-| learning_rate          	| The learning rate during training                                                               	| Depends on the problem   	|
-| switch_env_steps       	| The number if iterations after which to switch the initial position of the drone                	| Any positive integer     	|
-| epsilon_model          	| The model used to calculate the value of epsilon for the epsilon greedy method                  	| linear, exponential      	|
 
 
 ## Run the Python code
@@ -164,14 +141,12 @@ python main.py
 
 Running main.py carries out the following steps
 * Attempt to load the config file
-* Attempt to connect with the Unreal Engine (the indoor_long environment must be running for python to connect with the environment, otherwise connection refused warning will appear — The code won’t proceed unless a connection is established)
-* Attempt to create two instances of the DNN (Double DQN is being used) and initialize them with the selected weights.
+* Attempt to generate the settings.json file required to specify the environment parameters
+* Attempt to start the 3D environment
 * Attempt to initialize Pygame screen for user interface
-Start the DRL algorithm
+* Attempt to begin the algorithm
 
-At this point, the drone can be seen moving around in the environment collecting data-points. The block diagram below shows the DRL algorithm used.
-
-![Cover Photo](/images/block_diag.png)
+At this point, the drone can be seen moving around in the environment
 
 #### Viewing learning parameters using tensorboard
 During simulation, RL parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by
