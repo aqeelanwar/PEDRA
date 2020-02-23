@@ -8,66 +8,10 @@ from environments.initial_positions import *
 from os import getpid
 from network.Memory import Memory
 from aux_functions import *
-from configs.read_cfg import read_env_cfg
-import configparser as cp
-from dotmap import DotMap
 import os, json
+from util.transformations import euler_from_quaternion
 
 
-
-def save_network_path(cfg, algorithm_cfg):
-    # Save the network to the directory network_path
-    weights_type = 'Imagenet'
-    if algorithm_cfg.custom_load == True:
-        algorithm_cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + 'CustomLoad/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
-    else:
-        algorithm_cfg.network_path = 'models/trained/' + '/' + cfg.env_type + '/' + cfg.env_name + '/' + weights_type + '/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
-
-    if not os.path.exists(algorithm_cfg.network_path):
-        os.makedirs(algorithm_cfg.network_path)
-
-    return cfg, algorithm_cfg
-
-def read_algorithm_cfg(config_filename, verbose):
-    algorithm_cfg = DotMap()
-    config = cp.ConfigParser()
-    config.read(config_filename)
-
-    # [Simulation Parameters]
-    if str(config.get('simulation_params', 'load_data')) == 'True':
-        algorithm_cfg.load_data = True
-    else:
-        algorithm_cfg.load_data = False
-    algorithm_cfg.load_data_path = str(config.get('simulation_params', 'load_data_path'))
-
-    # [RL Parameters]
-    algorithm_cfg.input_size = int(config.get('RL_params', 'input_size').split(',')[0])
-    algorithm_cfg.num_actions = int(config.get('RL_params', 'num_actions').split(',')[0])
-    algorithm_cfg.train_type = config.get('RL_params', 'train_type')
-    algorithm_cfg.wait_before_train = int(config.get('RL_params', 'wait_before_train').split(',')[0])
-    algorithm_cfg.max_iters = int(config.get('RL_params', 'max_iters').split(',')[0])
-    algorithm_cfg.buffer_len = int(config.get('RL_params', 'buffer_len').split(',')[0])
-    algorithm_cfg.batch_size = int(config.get('RL_params', 'batch_size').split(',')[0])
-    algorithm_cfg.epsilon_saturation = int(config.get('RL_params', 'epsilon_saturation').split(',')[0])
-    algorithm_cfg.crash_thresh = float(config.get('RL_params', 'crash_thresh').split(',')[0])
-    algorithm_cfg.gamma = float(config.get('RL_params', 'gamma').split(',')[0])
-    algorithm_cfg.dropout_rate = float(config.get('RL_params', 'dropout_rate').split(',')[0])
-    algorithm_cfg.lr = float(config.get('RL_params', 'learning_rate').split(',')[0])
-    algorithm_cfg.switch_env_steps = int(config.get('RL_params', 'switch_env_steps').split(',')[0])
-    algorithm_cfg.epsilon_model = config.get('RL_params', 'epsilon_model')
-    algorithm_cfg.Q_clip = bool(config.get('RL_params', 'Q_clip'))
-    algorithm_cfg.train_interval = int(config.get('RL_params', 'train_interval').split(',')[0])
-    algorithm_cfg.update_target_interval = int(config.get('RL_params', 'update_target_interval').split(',')[0])
-
-    if verbose:
-        print('------------------------------ Algorithm Config File ------------------------------')
-        for param in algorithm_cfg:
-            spaces = ' ' * (30 - len(param))
-            print(param + ':' + spaces + str(algorithm_cfg[param]))
-
-    # print('-------------------------------------------------------------------------')
-    print()
-    return algorithm_cfg
 
 def generate_json(cfg):
     path = os.path.expanduser('~\Documents\Airsim')
@@ -107,12 +51,13 @@ def generate_json(cfg):
 
     CameraDefaults['CaptureSettings'].append(camera)
 
-    data['CameraDefaults']=CameraDefaults
+    data['CameraDefaults'] = CameraDefaults
     with open(filename, 'w') as outfile:
-        json.dump(data, outfile)
+        json.dump(data, outfile, indent=4)
+
 
 def DeepQLearning(cfg):
-    algorithm_cfg = read_algorithm_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
+    algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
     generate_json(cfg)
     # Start the environment
     env_process, env_folder = start_environment(env_name=cfg.env_name)
@@ -134,17 +79,20 @@ def DeepQLearning(cfg):
     # Connect to Unreal Engine and get the drone handle: client
     client, old_posit = connect_drone(ip_address=cfg.ip_address, phase=cfg.phase)
 
-    # Define DQN agents
     fig_z=[]
     fig_nav=[]
+
+    show_depthmap = False
+
+    # Define DQN agents
     agent = DeepAgent(algorithm_cfg, client, name='DQN')
     if cfg.phase == 'train':
         target_agent = DeepAgent(algorithm_cfg, client, name='Target')
 
     elif cfg.phase == 'infer':
-        env_cfg = read_env_cfg(config_filename=env_folder+'config.cfg')
-        nav_x=[]
-        nav_y=[]
+        env_cfg = read_cfg(config_filename=env_folder+'config.cfg')
+        nav_x = []
+        nav_y = []
         altitude=[]
         p_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav = initialize_infer(env_cfg=env_cfg, client=client, env_folder=env_folder)
         nav_text = ax_nav.text(0, 0, '')
@@ -172,18 +120,16 @@ def DeepQLearning(cfg):
     distance_array = np.zeros(shape=len(level_name))
     epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
 
-
     current_state = agent.get_state()
 
     # Log file
-    log_path = algorithm_cfg.network_path+'log.txt'
+    log_path = algorithm_cfg.network_path+ '_'+ cfg.phase +'log.txt'
     print("Log path: ", log_path)
     f = open(log_path, 'w')
 
-
     while active:
         try:
-            active, automate, algorithm_cfg.lr, client = check_user_input(active, automate,algorithm_cfg.lr, algorithm_cfg.epsilon, agent, algorithm_cfg.network_path, client, old_posit, initZ, cfg.phase, fig_z, fig_nav, env_folder)
+            active, automate, algorithm_cfg.learning_rate, client = check_user_input(active, automate,algorithm_cfg.learning_rate, algorithm_cfg.epsilon, agent, algorithm_cfg.network_path, client, old_posit, initZ, cfg.phase, fig_z, fig_nav, env_folder)
 
             if automate:
 
@@ -218,7 +164,6 @@ def DeepQLearning(cfg):
                         ret = ret_array[level]
                         distance = distance_array[level]
                         episode = epi_env_array[int(level/3)]
-                        xxx = client.simGetVehiclePose()
                         # environ = environ^True
 
                     action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon, current_state, iter, algorithm_cfg.epsilon_saturation,algorithm_cfg.epsilon_model,  algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent)
@@ -228,17 +173,15 @@ def DeepQLearning(cfg):
                     agent.take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
                     # time.sleep(0.05)
 
-                    posit = client.simGetVehiclePose()
-
                     new_state = agent.get_state()
                     new_depth1, thresh = agent.get_depth()
 
                     # Get GPS information
                     posit = client.simGetVehiclePose()
-                    orientation = posit.orientation
                     position = posit.position
                     old_p = np.array([old_posit.position.x_val, old_posit.position.y_val])
                     new_p = np.array([position.x_val, position.y_val])
+
                     # calculate distance
                     distance = distance + np.linalg.norm(new_p - old_p)
                     old_posit = posit
@@ -272,9 +215,9 @@ def DeepQLearning(cfg):
 
                             if choose:
                                 # Double-DQN
-                                target_agent.train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.lr, algorithm_cfg.epsilon, iter)
+                                target_agent.train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
                             else:
-                                agent.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.lr, algorithm_cfg.epsilon, iter)
+                                agent.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
 
                         if iter % algorithm_cfg.update_target_interval == 0:
                             agent.take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
@@ -289,11 +232,13 @@ def DeepQLearning(cfg):
                     mem_percent = process.memory_info()[0]/2.**30
 
                     s_log = 'Level :{:>2d}: Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} Mem = {:<5.4f}  Reward: {:<+1.4f}  '.format(
-                            int(level),iter, episode,
+                            int(level),
+                            iter,
+                            episode,
                             action_word,
                             action_type,
                             algorithm_cfg.epsilon,
-                            algorithm_cfg.lr,
+                            algorithm_cfg.learning_rate,
                             ret,
                             last_crash,
                             time_exec,
@@ -304,9 +249,9 @@ def DeepQLearning(cfg):
                     f.write(s_log+'\n')
 
                     last_crash=last_crash+1
-                    # cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
-                    # cv2.waitKey(1)
-
+                    if show_depthmap:
+                        cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
+                        cv2.waitKey(1)
 
                     if crash:
                         agent.return_plot(ret, episode, int(level/3), mem_percent, iter, distance)
@@ -350,8 +295,12 @@ def DeepQLearning(cfg):
                         distance = distance + np.linalg.norm(np.array([old_posit.position.x_val-posit.position.x_val,old_posit.position.y_val-posit.position.y_val]))
                         altitude.append(-posit.position.z_val+p_z)
 
+                        quat = (posit.orientation.w_val, posit.orientation.x_val, posit.orientation.y_val, posit.orientation.z_val)
+                        yaw = euler_from_quaternion(quat)[2]
+
                         x_val = posit.position.x_val
                         y_val = posit.position.y_val
+                        z_val = posit.position.z_val
 
                         nav_x.append(env_cfg.alpha*x_val+env_cfg.o_x)
                         nav_y.append(env_cfg.alpha*y_val+env_cfg.o_y)
@@ -369,9 +318,18 @@ def DeepQLearning(cfg):
                         action, action_type, algorithm_cfg.epsilon, qvals = policy(1, current_state, iter,
                                                                           algorithm_cfg.epsilon_saturation, 'inference',
                                                                           algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent)
+                        action_word = translate_action(action, algorithm_cfg.num_actions)
                         # Take continuous action
                         agent.take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                        old_posit=posit
+                        old_posit = posit
+
+                        # Verbose and log making
+                        s_log = 'Position = ({:<3.2f},{:<3.2f}, {:<3.2f}) Orientation={:<1.3f} Predicted Action: {:<8s}  '.format(
+                            x_val, y_val, z_val, yaw, action_word
+                        )
+
+                        print(s_log)
+                        f.write(s_log + '\n')
 
 
 
