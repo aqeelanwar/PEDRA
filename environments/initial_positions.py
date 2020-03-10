@@ -63,8 +63,7 @@ def indoor_meta():
                     'GT1', 'GT2', 'GT3',
                 ]
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 
 # Train complex indoor initial positions
@@ -79,8 +78,7 @@ def indoor_complex():
     ]
     level_name = ['Complex1', 'Complex2', 'Complex3', 'Complex4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 # Test condo indoor initial positions
 def indoor_cloud():
@@ -94,22 +92,20 @@ def indoor_cloud():
     ]
     level_name = ['Condo1', 'Condo2', 'Condo3', 'Condo4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 def indoor_gt():
     # The environment can be downloaded from
     # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
     orig_ip = [
-        [-30, 460, 0],  # Player start
+        [-240, 400, 0],  # Player start
         [640, 900, 270],
         [-130, -1600, 200],
         [-1000, 350, 200]
     ]
     level_name = ['GT1', 'GT2', 'GT3', 'GT4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 def indoor_techno():
     # The environment can be downloaded from
@@ -122,8 +118,7 @@ def indoor_techno():
     ]
     level_name = ['Techno1', 'Techno2', 'Techno3', 'Techno4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 def indoor_vanleer():
     # The environment can be downloaded from
@@ -136,8 +131,46 @@ def indoor_vanleer():
     ]
     level_name = ['VanLeer1', 'VanLeer2', 'VanLeer3', 'VanLeer4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
+
+def outdoor_forest():
+    # The environment can be downloaded from
+    # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
+    orig_ip = [
+        [16000, 15000, 180],  #Player Start
+        [6000, 25000, 0],
+        [7000, 10000, 0],
+        [10000, 17000, 90]
+    ]
+    level_name = ['Forest1', 'Forest2', 'Forest3', 'Forest4']
+    crash_threshold = 0.07
+    return orig_ip, level_name, crash_threshold
+
+def outdoor_courtyard():
+    # The environment can be downloaded from
+    # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
+    orig_ip = [
+        [1000, -4200, 90],  #Player Start
+        [3500, -5000, 180],
+        [3500, -3200, 180],
+        [2000, -2500, 180]
+    ]
+    level_name = ['Courtyard1', 'Courtyard2', 'Courtyard3', 'Courtyard4']
+    crash_threshold = 0.07
+    return orig_ip, level_name, crash_threshold
+
+def outdoor_oldtown():
+    # The environment can be downloaded from
+    # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
+    orig_ip = [
+        [4500, -8000, 0],  #Player Start
+        [4800, -3000, 0],
+        [9500, -3000, 180],
+        [8000, -5300, -90]
+    ]
+    level_name = ['Courtyard1', 'Courtyard2', 'Courtyard3', 'Courtyard4']
+    crash_threshold = 0.07
+    return orig_ip, level_name, crash_threshold
 
 def indoor_long():
     # The environment can be downloaded from
@@ -147,27 +180,26 @@ def indoor_long():
         [-4224, -2601, 180],
         [1180, -2153, -90],
         [2058, -3184, 50],
-        [1644,-1464, 15],
+        [1644, -1464, 15],
         [-3754, -4302, 0]
     ]
+
     level_name = ['Long1', 'Long2', 'Long3', 'Long4', 'Long5', 'Long6']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 def indoor_pyramid():
     # The environment can be downloaded from
     #https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
     orig_ip = [
         [-1450, -520, 90],  # Player Start
-        [-940, 240, 130],
+        [-650, 240, 130],
         [860, -880, 160],
-        [-750, -860, 0]
+        [-150, 1400, -45]
     ]
     level_name = ['Pyramid1', 'Pyramid2', 'Pyramid3', 'Pyramid4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 
 def indoor_frogeyes():
@@ -179,53 +211,67 @@ def indoor_frogeyes():
         [-1480, -850, 0],
         [2000, -400, -110]
     ]
-    level_name = ['Pyramid1', 'Pyramid2', 'Pyramid3', 'Pyramid4']
+    level_name = ['FrogEyes1', 'FrogEyes2', 'FrogEyes3', 'FrogEyes4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
 
 def indoor_twist():
     # The environment can be downloaded from
     # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
     orig_ip = [
-        [-1990, 1070, 90],  # Player Start
-        [-1440, 320, 0],
-        [1460, -1440, 0],
-        [1970, 360, 180]
+        [120, -770, 0],  # Player Start
+        [2200, 0, 90],
+        [1400, 1400, 45],
+        [1300, 400, -90]
     ]
     level_name = ['Twist1', 'Twist2', 'Twist3', 'Twist4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
-
-def indoor_pretzel():
+def indoor_updown():
     orig_ip =   [
-                  [3308, 650, 180], # Player start
-                   [3330, -200, -160],
-                   [1480, -1040, 25]
+                  [-1990, 1070, 90], # Player start
+                   [-1500, 300, 0],
+                   [1800, 300, 180],
+                   [2000, -1400, 180]
                 ]
-    level_name = ['Cloud1', 'Cloud2', 'Cloud3']
+    level_name = ['UpDown1', 'UpDown2', 'UpDown3', 'UpDown4']
     crash_threshold = 0.07
-    initZ = 0
-    return orig_ip, level_name, crash_threshold, initZ
+    return orig_ip, level_name, crash_threshold
 
-def initial_positions(name):
+def initial_positions(name, initZ=0, num_agents = 1):
     name = name+'()'
-    orig_ip, level_name, crash_threshold, initZ = eval(name)
-    player_start_unreal=orig_ip[0]
-    reset_array = []
+    orig_ip, levels, crash_threshold = eval(name)
+    ip_each_drone = int(np.floor(len(orig_ip) / num_agents))
 
-    for i in range(0, len(orig_ip)):
-        x1 = (orig_ip[i][0]-player_start_unreal[0])/100
-        y1 = (orig_ip[i][1]-player_start_unreal[1])/100
-        z1 = 0
-        # z1 = initZ # in case of computervision mode
-        pitch = 0
-        roll = 0
-        yaw = orig_ip[i][2]*np.pi/180
-        pp = airsim.Pose(airsim.Vector3r(x1, y1, z1), airsim.to_quaternion(pitch, roll, yaw))
-        reset_array.append(pp)
+    reset_array = {}
+    reset_array_raw = {}
+    level_names = {}
+    for agents in range(num_agents):
+        name_agent = "drone" + str(agents)
+        ind = ip_each_drone * agents
+        player_start_unreal = orig_ip[ind]
+        reset_array[name_agent] = []
+        reset_array_raw[name_agent] = []
+        level_names[name_agent] = []
+        physical_player_start = orig_ip[0]
 
-    return reset_array, level_name, crash_threshold, initZ
+
+        for i in range(ip_each_drone):
+            x1 = (orig_ip[i+ind][0]-player_start_unreal[0])/100
+            y1 = (orig_ip[i+ind][1]-player_start_unreal[1])/100
+
+            x_raw = (orig_ip[i+ind][0]-physical_player_start[0])/100
+            y_raw = (orig_ip[i+ind][1]-physical_player_start[1])/100
+
+            # z1 = 0
+            z1 = initZ # in case of computervision mode
+            pitch = 0
+            roll = 0
+            yaw = orig_ip[i+ind][2]*np.pi/180
+            pp = airsim.Pose(airsim.Vector3r(x1, y1, z1), airsim.to_quaternion(pitch, roll, yaw))
+            reset_array[name_agent].append(pp)
+            reset_array_raw[name_agent].append([x_raw, y_raw, z1, yaw*180/np.pi, roll*180/np.pi, pitch*180/np.pi])
+            level_names[name_agent].append(levels[ind+i])
+    return reset_array, reset_array_raw, level_names, crash_threshold

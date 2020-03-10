@@ -1,3 +1,4 @@
+*.xlsx
 *.npy
 *.pyc
 *.xml
