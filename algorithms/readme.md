@@ -34,3 +34,22 @@ Value based deep Q learning with Double DQN and prioritized experienced replay
 | learning_rate          	| The learning rate during training                                                               	| Depends on the problem   	|
 | switch_env_steps       	| The number if iterations after which to switch the initial position of the drone                	| Any positive integer     	|
 | epsilon_model          	| The model used to calculate the value of epsilon for the epsilon greedy method                  	| linear, exponential      	|
+
+
+## Download imagenet weights for AlexNet
+The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
+
+[Download imagenet.npy](https://drive.google.com/open?id=1Ei4mCzjfLY5ql6ILIUHaCtAR2XF6BtAM)
+
+Once downloaded, place it in
+```
+models/imagenet.npy
+```
+
+#### Run-time controls using PyGame screen
+DRL is notorious to be data hungry. For complex tasks such as drone autonomous navigation in a realistically looking environment using the front camera only, the simulation can take hours of training (typically from 8 to 12 hours on a GTX1080 GPU) before the DRL can converge. In the middle of the simulation, if you feel that you need to change a few DRL parameters, you can do that by using the PyGame screen that appears during your simulation. This can be done using the following steps
+1. Change the config file to reflect the modifications (for example decrease the learning rate) and save it.
+2. Select the Pygame screen, and hit ‘backspace’. This will pause the simulation.
+3. Hit the ‘L’ key. This will load the updated parameters and will print it on the terminal.
+4. Hit the ‘backspace’ key to resume the simulation.
+Right now the simulation only updates the learning rate. Other variables can be updated too by editing the aux_function.py file for the module check_user_input
