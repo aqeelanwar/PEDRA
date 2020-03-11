@@ -46,73 +46,61 @@ This will install the required packages in the activated python environment.
 
 
 ## Install Epic Unreal Engine
-The provided simulated environments are created using Unreal gaming engine. In order for these environments to run, you need to have unreal engine installed on the machine. You can follow the guidelines in the link below to install Unreal Engine on your platform. It is advisable to install Unreal Engine version 4.18.3.
+You can follow the guidelines in the link below to install Unreal Engine on your platform
 
 [Instructions on installing Unreal engine](https://docs.unrealengine.com/en-US/GettingStarted/Installation/index.html)
 
 
 # Running PEDRA
-Once you have the required packages and software installed, you can take the following steps to run the code
+Once you have the required packages and software downloaded and running, you can take the following steps to run the code
 
-## Download a simulated environment
-You can either manually create your own environment using Unreal Engine (See FAQ below to install AirSim Plugin if you plan on creating your own environment), or you can download one of the environments from the link below.
+## Download imagenet weights for AlexNet
+The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
+
+[Download imagenet.npy](https://drive.google.com/open?id=1Ei4mCzjfLY5ql6ILIUHaCtAR2XF6BtAM)
+
+Once downloaded, place it in
+```
+models/imagenet.npy
+```
+
+
+## Create/Download a simulated environment
+You can either manually create your environment using Unreal Engine (See FAQ below to install AirSim Plugin if you plan on creating your own environment), or can download one of the sample environments from the link below and run it.
 
 [Download Environments](https://drive.google.com/open?id=1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z)
 
-Following environments are available for download
+Following environments are available for download from the link above
 
-* Indoor Environments:
-  * Indoor Long Environment
-  * Indoor Twist Environment
-  * Indoor VanLeer Environment
-  * Indoor Techno Environment
-  * Indoor Pyramid Environment
-  * Indoor FrogEyes Environment
-  * Indoor GT Environment
-  * Indoor Complex Environment
-  * Indoor UpDown Environment
-  * Indoor Cloud Environment
-
-
-* Outdoor Environments:
-  * Outdoor Courtyard
-  * Outdoor Forest
-  * Outdoor OldTown
+* Indoor Long Environment
+* Indoor Twist Environment
+* Indoor VanLeer Environment
+* Indoor Techno Environment
+* Indoor Pyramid Environment
+* Indoor FrogEyes Environment
+* Indoor GT Environment
+* Indoor Complex Environment
+* Indoor UpDown Environment
+* Indoor Cloud Environment
 
 
-More details on the environments can be found here [environment readme](environments/readme.md).
-
-The link above will help you download the packaged version of the environment for 64-bit windows. Extract and save it in the unreal_env folder (create the unreal_env folder if it doesn't exist).
+The link above will help you download the packaged version of the environment for 64-bit windows. Save the folder in the unreal_env folder (create the unreal_env folder if it doesn't exist).
 
 ```
-# Generic
-|-- PEDRA
-|    |-- unreal_envs
-|    |    |-- <downloaded-environment-folder>
-
-
-# Example
-|-- PEDRA
-|    |-- unreal_envs
-|    |    |-- indoor_cloud
-|    |    |-- outdoor_forest
-|    |
+PEDRA/unreal_envs/<downloaded-environment-folder>    # Generic
+PEDRA/unreal_envs/indoor_cloud                       # Example
 ```
 
 
-## Edit the configuration file
-Two types of configuration files are available to control general simulation parameters and algorithmic-specific parameters which can be found in the configs folder
+## Edit the configuration file (Optional)
+The RL parameters for the DRL simulation can be set using the provided config file and are self-explanatory. The details on the parameters in the config file can be found [here](https://towardsdatascience.com/deep-reinforcement-learning-for-drones-in-3d-realistic-environments-36821b6ee077)
 
-### Simulation configurations:
 ```
-|-- PEDRA
-|    |-- configs
-|    |    |-- config.cfg
+cd PEDRA\configs
+notepad config.cfg (#for windows)
 ```
 
-This config file is used to set high-level simulation parameters. The complete list of parameters and their explanation can be seen below.
-
-#### General Parameters [general_params]:
+### General Parameters [general_params]:
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
@@ -121,37 +109,30 @@ This config file is used to set high-level simulation parameters. The complete l
 | custom_load_path 	| If custom_load is set to True, this dictates the path of the weights to be loaded 	| Relative path to weights         	|
 | env_type         	| Type of the environment (to be used in future versions)                           	| indoor/outdoor                   	|
 | env_name         	| Name of the environment to be used in the simulation                              	| indoor_cloud, indoor_techno etc. 	|
-| phase            	| Dictates the mode you want to run the simulation in                           	| train / infer / move_around                    	|
+| phase            	| Dictates what mode do you want to run the simulation in                           	| train / infer                    	|
 | SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
 | drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
 | ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
-| algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
-| ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
-| num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
+| algorithm         | The algorithm needs to be implemented. Details in PEDRA/algorithms/readme.md        | e.g. DeepQLearning                |
+| ip_address        | Dictates the simulation speed                                                       | Any value > 0                     |
 
-#### Camera Parameters [camera_params]:
+### Camera Parameters [camera_params]:
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
 | width         	  | Width of the camera frame                                                           | Any integer > 0                  	|
 | height      	    | Height of the camera frame                    	                                    | Any integer > 0                   |
-| fov_degrees 	    | Camera field of view in degrees                                                   | Any value >0                    	|
+| fov_degrees 	    | Camera field of viewed in degrees                                                   | Any value >0                    	|
 
 
-### Algorithm-specific configurations:
-```
-# Example
-|-- PEDRA
-|    |-- configs
-|    |    |-- DeepQLearning.cfg
-```
-
-Based on the algorithm selected in the general_param category of the main config file (config.cfg), algorithm-specific config file needs to be edited for user provided parameters. More details on this can be found [here](/algorithms/readme.md)
+## Edit the algorithm configuration file (Optional)
+Based on the algorithm selected in the general_param category of the main config file, algorithm specific config file needs to be edited for user provided parameters. More details on this can be found [here](/algorithms/readme.md)
 
 
 
 ## Run the Python code
-Once the config files have been edited according to the user needs, the simulation can be started using the main.py file
 
+### Training Phase:
+To carry out training, make sure the phase parameter within the [general_params] group of the config file is set to train. After setting the parameters in under the [RL_params] category, the DRL training code can be started using the following command
 
 ```
 cd PEDRA
@@ -159,31 +140,16 @@ python main.py
 ```
 
 Running main.py carries out the following steps
-
-![start_pedra](images/pedra_start.png)
-
-* Attempt to load the config files
+* Attempt to load the config file
 * Attempt to generate the settings.json file required to specify the environment parameters
-* Attempt to start the selected 3D environment
-* Attempt to initialize PyGame screen for user interface
+* Attempt to start the 3D environment
+* Attempt to initialize Pygame screen for user interface
 * Attempt to begin the algorithm
 
+At this point, the drone can be seen moving around in the environment
 
-At this point, the drone can be seen moving around in the environment.
-
-## Supported modes:
-The config file can be used to select the mode the simulation needs to be run in.
-* __train__:        Signifies the training mode, used as an input flag for algorithm to be implemented
-* __infer__:        Signifies the inference mode, used as input flag for the algorithm to be implemented. Custom weights can be loaded into the network by setting the following parameters
-
-```
-custom_load_path: True
-custom_load_path: <path_to_weights>
-```
-* __move_around__:  When mode is set to move_around, the simulation starts the environment in free mode. In this mode, keyboard can be used to navigate across the environment. This mode can help the user get an idea of the environment dynamics. The keyboard keys __a, w, s, d, left, right, up and down__ can be used to navigate around.  This can also be helpful when identifying for initial positions for drone. More details [here](environments/readme.md)
-
-## Viewing learning parameters using tensorboard
-During simulation, tensorflow parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by
+#### Viewing learning parameters using tensorboard
+During simulation, RL parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by
 ```
 models/trained/<env_type>/<env_name>/Imagenet/   # Generic path
 models/trained/Indoor/indoor_long/Imagenet/      # Example path
@@ -199,8 +165,23 @@ tensorboard --logdir e2e                         # Example
 The terminal will display the local URL that can be opened up on any browser, and the tensorboard display will appear plotting the DRL parameters on run-time.
 ![tensorboard](/images/tf.png)
 
+<!-- While the simulation is running, RL parameters such as epsilon, learning rate, average Q values and loss can be viewed on the tensorboard. The path depends on the env_type, env_name and train_type set in the config file and is given by 'models/trained/&lt;env_type>/&lt;env_name>/Imagenet/''. An example can be seen below
+
+```
+cd models\trained\Indoor\indoor_long\Imagenet\
+tensorboard --logdir e2e
+
+``` -->
+
+
 #### Run-time controls using PyGame screen
-Algorithmic specific controls can be defined and accessed using the PyGame screen. More information can be found [here](algorithms/readme.md)
+DRL is notorious to be data hungry. For complex tasks such as drone autonomous navigation in a realistically looking environment using the front camera only, the simulation can take hours of training (typically from 8 to 12 hours on a GTX1080 GPU) before the DRL can converge. In the middle of the simulation, if you feel that you need to change a few DRL parameters, you can do that by using the PyGame screen that appears during your simulation. This can be done using the following steps
+1. Change the config file to reflect the modifications (for example decrease the learning rate) and save it.
+2. Select the Pygame screen, and hit ‘backspace’. This will pause the simulation.
+3. Hit the ‘L’ key. This will load the updated parameters and will print it on the terminal.
+4. Hit the ‘backspace’ key to resume the simulation.
+Right now the simulation only updates the learning rate. Other variables can be updated too by editing the aux_function.py file for the module check_user_input
+
 
 
 ### Inference Phase:
@@ -215,8 +196,6 @@ custom_load_path: <path_to_weights>
 The simulation updates two graphs in real-time. The first graph is the altitude variation of the drone, while the other one is the drone trajectory mapped onto the environment floorplan. The trajectory graph also reports the total distance traveled by the drone before crash.
 
 ![Inference graphs](/images/infer.gif)
-
-More algorithm specific graphs can be added by making use of the floorplan provide with the environment.
 
 #### Run-time controls using PyGame screen
 Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the phase infer)
