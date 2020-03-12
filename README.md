@@ -1,5 +1,9 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA)
-
+The tutorial/guidlines to PEDRA is divided into 4 reamde files
+1. Main readme file [this one]
+2. [Environments readme file](/unreal_envs/readme.md)
+3. [Algorithms readme file](/algorithms/readme.md)
+4. [FAQ readme file](faq.md)
 # What is PEDRA?
 PEDRA is a programmable engine for Drone Reinforcement Learning (RL) applications. The engine is developed in Python and is module-wise programmable. PEDRA is targeted mainly at goal-oriented RL problems for drones, but can also be extended to other problems such as SLAM etc. The engine interfaces with Unreal gaming engine using AirSim to create the complete platform. Figure below shows the complete block diagram of the engine. [Unreal engine](https://www.unrealengine.com/en-US/) is used to create 3D realistic environments for the drones to be trained in. Different level of details can be added to make the environment look as realistic or as required as possible. PEDRA comes equip with a list of 3D realistic environments that can be selected by user. Once the environment is selected, it is interfaced with PEDRA using using [AirSim](https://github.com/microsoft/AirSim). AirSim is an open source plugin developed by Microsoft that interfaces Unreal Engine with Python. It provides basic python functionalities controlling the sensory inputs and control signals of the drone. PEDRA is built onto the low level python modules provided by AirSim creating higher level python modules for the purpose of drone RL applications.
 
@@ -80,9 +84,9 @@ Following environments are available for download
   * Outdoor OldTown
 
 
-More details on the environments can be found here [environment readme](environments/readme.md).
+More details on the environments can be found here [environment readme](unreal_envs/readme.md).
 
-The link above will help you download the packaged version of the environment for 64-bit windows. Extract and save it in the unreal_env folder (create the unreal_env folder if it doesn't exist).
+The link above will help you download the packaged version of the environment for 64-bit windows. Extract and save it in the unreal_env folder.
 
 ```
 # Generic
@@ -191,7 +195,7 @@ The config file can be used to select the mode the simulation needs to be run in
 custom_load_path: True
 custom_load_path: <path_to_weights>
 ```
-* __move_around__:  When mode is set to move_around, the simulation starts the environment in free mode. In this mode, keyboard can be used to navigate across the environment. This mode can help the user get an idea of the environment dynamics. The keyboard keys __a, w, s, d, left, right, up and down__ can be used to navigate around.  This can also be helpful when identifying for initial positions for drone. More details [here](environments/readme.md)
+* __move_around__:  When mode is set to move_around, the simulation starts the environment in free mode. In this mode, keyboard can be used to navigate across the environment. This mode can help the user get an idea of the environment dynamics. The keyboard keys __a, w, s, d, left, right, up and down__ can be used to navigate around.  This can also be helpful when identifying for initial positions for drone. More details [here](unreal_envs/readme.md)
 
 ## Viewing learning parameters using tensorboard
 During simulation, tensorflow parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by
@@ -243,7 +247,7 @@ AirSim is an open-source plugin for Unreal Engine developed by Microsoft for age
 ### Setting up initial positions in an environment:
 Following module can be used to dictate initial positions for drone in the environment
 ```
-environments/initial_positions.py
+unreal_envs/initial_positions.py
 ```
 
 1. Locate the python module with the name of the environment and add to the orig_ip array. Each member of the orig_ip array is one initial position corresponding to (x, y, theta) where x and y are the positional coordinates and theta is the orientation (yaw). Make sure that you don't modify the first initial position commented as __Player start__.
