@@ -65,14 +65,16 @@ Apart from the AirSim provided features, these environments have the following f
 | F2         	      | Toggle PEDRA help                                                 |PEDRA         |
 | P          	      | Display current position (x,y) and orientation (yaw) of the drone |PEDRA         |
 | Z         	      | Toggle the floorplan minimap                                      |PEDRA         |
-| F2         	      | Toggle PEDRA help                                                 |PEDRA         |
-| 1         	      | Toggle depth map as subwindow                                     |PEDRA         |
-| 2         	      | Toggle segmentation map as subwindow                              |PEDRA         |
-| 3         	      | Toggle image from front facing camera as subwindow                |PEDRA         |
+| 1         	      | Toggle depth map as subwindow                                     |AirSim        |
+| 2         	      | Toggle segmentation map as subwindow                              |AirSim        |
+| 3         	      | Toggle image from front facing camera as subwindow                |AirSim        |
 
 More PEDRA environmental features will be added in the future releases.
 
-![pedra_help](/images/pedra_help.gif)
+<p align="center">
+<img src="/images/pedra_help.gif">
+</p>
+
 
 
 
@@ -107,15 +109,21 @@ This can be done by setting the config.cfg file to move_around mode. In this mod
 [x coordinates, y coordinates, z coordinates]     # Physical coordinates
 ```
 
-![print_position](/images/print_position.png)
+
+<p align="center">
+<img src="/images/print_position.png">
+</p>
+
 
 
 These values can directly be fed into the orig_ip variable of the environments/initial_positions.py file in the following format making it accessible to PEDRA code
 ```
 [x coord, y coord, yaw]
 ```
+<p align="center">
+<img src="/images/initial_positions_py.png">
+</p>
 
-![initial_positions_py](/images/initial_positions_py.png)
 
 
 ### 2. Running retreive_initial_position.py:
@@ -126,6 +134,10 @@ python retrieve_initial_position.py
 ```
 Running this will open the directory for the user to select the floorplan of the required environment. Once the user selects the floorplan, moue cursor can be used to click in the floorplan to extract the drone coordinates. All three coordinates corresponding to the position selected are displayed on the left top part of the display window.
 In order to use these coordinates in the initial_positions.py file, make sure you use the physical coordinates.
-![retrieve_initial_positions_py](/images/retrieve_initial_positions.gif)
+
+<p align="center">
+<img src="/images/retrieve_initial_positions.gif">
+</p>
+
 
 Talk about the format and all.
