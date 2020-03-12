@@ -147,10 +147,9 @@ def outdoor_forest():
     return orig_ip, level_name, crash_threshold
 
 def outdoor_courtyard():
-    # The environment can be downloaded from
-    # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
+    # Format: [physical x coord, physical y coord, yaw degrees]
     orig_ip = [
-        [1000, -4200, 90],  #Player Start
+        [1000, -4200, 90],  #Player Start DO NOT MODIFY
         [3500, -5000, 180],
         [3500, -3200, 180],
         [2000, -2500, 180]

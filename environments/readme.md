@@ -103,20 +103,29 @@ PEDRA provides two ways of doing that
 ### 1. Running PEDRA in move_around mode:
 This can be done by setting the config.cfg file to move_around mode. In this mode, keyboard can be used to navigate across the environment. This mode can help the user get an idea of the environment dynamics. The keyboard keys __a, w, s, d, left, right, up and down__ can be used to navigate around. Once the user navigates the drone to position of his/her linking, key P on the keyboard can be used to display the position of the drone on the left top part of the simulation screen. Each position array displayed has three parts
 ```
-[x_physical, y_physical, yaw_degrees]
+[pitch, yaw, roll]                                # Degrees
+[x coordinates, y coordinates, z coordinates]     # Physical coordinates
 ```
 
-These values can directly be fed into the orig_ip variable of the initial_positions.py file. This makes it accessible to the PEDRA code.
-The figure below show
+![print_position](/images/print_position.png)
 
 
-### 2. Running retreive_positions.py:
-The second way of extracting desirable drone position is to use the python file retreive_positions.py
+These values can directly be fed into the orig_ip variable of the environments/initial_positions.py file in the following format making it accessible to PEDRA code
+```
+[x coord, y coord, yaw]
+```
+
+![initial_positions_py](/images/initial_positions_py.png)
+
+
+### 2. Running retreive_initial_position.py:
+The second way of extracting desirable drone position is to use the python file retreive_initial_position.py
 ```
 cd PEDRA
-python retrieve_positions.py
+python retrieve_initial_position.py
 ```
 Running this will open the directory for the user to select the floorplan of the required environment. Once the user selects the floorplan, moue cursor can be used to click in the floorplan to extract the drone coordinates. All three coordinates corresponding to the position selected are displayed on the left top part of the display window.
-In order to use these coordinates in the initial_positions.oy file, make sure you use the physical coordinates.
+In order to use these coordinates in the initial_positions.py file, make sure you use the physical coordinates.
+![retrieve_initial_positions_py](/images/retrieve_initial_positions.gif)
 
 Talk about the format and all.
