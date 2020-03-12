@@ -56,8 +56,8 @@ Right now the simulation only updates the learning rate. Other variables can be 
 
 
 
-### Inference Phase:
-To run the simulation in the inference phase, make sure the phase parameter within the [general_params] group of the config file is set to infer. Custom weights can be loaded into the network by setting the following parameters
+### Inference Mode:
+To run the simulation in the inference mode, make sure the mode parameter within the [general_params] group of the config file is set to infer. Custom weights can be loaded into the network by setting the following parameters
 
 ```
 custom_load_path: True
@@ -66,7 +66,7 @@ custom_load_path: <path_to_weights>
 
 
 #### Run-time controls using PyGame screen
-Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the phase infer)
+Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the mode infer)
 
 * Backspace key: Pause/Unpause the simulation
 * S key: Save the altitude variation and trajectory graphs at the following location

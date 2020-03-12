@@ -4,6 +4,6 @@
 *.xml
 .idea/
 models/
-unreal_envs/
+unreal_envs/*/
 scratch.py
 

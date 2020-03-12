@@ -121,7 +121,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | custom_load_path 	| If custom_load is set to True, this dictates the path of the weights to be loaded 	| Relative path to weights         	|
 | env_type         	| Type of the environment (to be used in future versions)                           	| indoor/outdoor                   	|
 | env_name         	| Name of the environment to be used in the simulation                              	| indoor_cloud, indoor_techno etc. 	|
-| phase            	| Dictates the mode you want to run the simulation in                           	| train / infer / move_around                    	|
+| mode            	| Dictates the mode you want to run the simulation in                           	| train / infer / move_around                    	|
 | SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
 | drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
 | ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |

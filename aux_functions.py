@@ -301,7 +301,7 @@ def pygame_connect(phase):
     return screen
 
 def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, fig_nav, env_folder,cfg, algorithm_cfg):
-    # algorithm_cfg.learning_rate, algorithm_cfg.epsilon,algorithm_cfg.network_path,cfg.phase,
+    # algorithm_cfg.learning_rate, algorithm_cfg.epsilon,algorithm_cfg.network_path,cfg.mode,
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -309,7 +309,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
             pygame.quit()
 
         # Training keys control
-        if event.type == pygame.KEYDOWN and cfg.phase =='train':
+        if event.type == pygame.KEYDOWN and cfg.mode =='train':
             if event.key == pygame.K_l:
                 # Load the parameters - epsilon
                 path = 'configs/' + cfg.algorithm + '.cfg'
@@ -331,7 +331,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                 automate = automate ^ True
 
             if event.key == pygame.K_r:
-                client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.phase,
+                client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode,
                                                          num_agents=cfg.num_agents)
 
                 agent.client = client
@@ -362,7 +362,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                     client.reset()
                 # agent.take_action(action)
 
-        elif event.type == pygame.KEYDOWN and cfg.phase == 'infer':
+        elif event.type == pygame.KEYDOWN and cfg.mode == 'infer':
             if event.key == pygame.K_s:
                 # Save the figures
                 file_path = env_folder + 'results/'
