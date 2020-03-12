@@ -68,12 +68,13 @@ Each environment comes with a config file. This config file includes the paramet
 
 </center>
 
-The image coordinates, PEDRA coordinates and physical coordinates are explained below. In case of an outdoor environment, the value of ceiling_z is ser to 10000 meaning that their is no ceiling.
+The image coordinates, PEDRA coordinates and physical coordinates are explained below. In case of an outdoor environment, the value of ceiling_z is set to 10000 meaning that there is no ceiling.
 
 
 
 ## Environment Supported Features:
-While the simulation screen is on, following keys can be used to interactive with it.
+While the simulation screen is on, following keys can be used to interact with it.
+
 <center>
 
 | Key        	      | Feature                                                           |Category      |
@@ -97,8 +98,8 @@ More PEDRA environmental features will be added in the future releases.
 ## Understanding the coordinates and conversion between them:
 There are three kind of coordinates in which the drone position can be expressed in.
 1. Physical coordinates:      The coordinates of the drone in the environment (Hitting Key P displays this coordinates)
-2. PEDRA coordinates (AirSim Coordiantes): The coordinates of the drone relative to the origin (player start). This is the coordinate in which PEDRA deals. Whenever a request is made from PEDRA to get the current position of the drone through AirSim, these coordinates are returned and vice versa.
-3. Image based coordinates: The coordinates of the drone in the floorplan image. Its a mapping of the actual drone coordinates onto the image map.
+2. PEDRA coordinates (AirSim Coordinates): The coordinates of the drone relative to the origin (player start). This is the coordinate in which PEDRA deals. Whenever a request is made from PEDRA to get the current position of the drone through AirSim, these coordinates are returned and vice versa.
+3. Image based coordinates: The coordinates of the drone in the floorplan image. It is a mapping of the actual drone coordinates onto the image map.
 
 <p align="center">
 <img src="/images/coordinate_conversion.png">
@@ -113,7 +114,7 @@ Within PEDRA, we always use the PEDRA coordinates to deal with drone positions w
 
 
 ## Extracting position of the drone in the environment
-Even before running your algorithm, you might want to define some key positions for the drone for example which positions should the drone reset to after crash, what should be the goal position of the drone etc. This includes finding a suitable drone position in the environment and extracting the coordinates of this position
+Even before running your algorithm, you might want to define some key positions for the drone. For example, which position the drone should reset to after crash, what should be the goal position of the drone etc. This includes finding a suitable drone position in the environment and extracting the coordinates of this position
 
 PEDRA provides two ways of doing that
 ### 1. Running PEDRA in move_around mode:

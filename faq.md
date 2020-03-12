@@ -6,6 +6,7 @@
 AirSim is an open-source plugin for Unreal Engine developed by Microsoft for agents (drones and cars) with physically and visually realistic simulations. In case you decide on creating your own environments on Unreal Engine (and not use the ones provided for download) you need to install the plugin into Unreal Engine. Details on how to install the plugin can be found below.
 
 [Instructions on installing AirSim](https://github.com/microsoft/airsim)
+
 ### *How to set up initial positions in an environment:*
 Following module can be used to dictate initial positions for drone in the environment
 ```

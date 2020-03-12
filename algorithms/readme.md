@@ -1,21 +1,25 @@
 # PEDRA - Provided Algorithms
 
-This readme file explains the PEDRA available algorithms that can be used in the config file.
+This readme file explains the PEDRA available algorithms that can be used by setting the algorithm parameter in the config file.
 
-## 1. Deep Q-learning (__*DeepQLearning*__)
+# 1. Deep Q-learning (__*DeepQLearning*__)
 ```
-config.cfg
+file: config.cfg
 
 algorithm:    DeepQLearning
 ```
 
-Value based deep Q learning with Double DQN and prioritized experienced replay that supports distributed learning.
+Value based deep Q learning method for autonomous navigation. The input to the DNN is the image from the front facing camera, while the output is the estimated Q-value of the action in the action space. The algorithm supports
+* Double DQN method
+* Prioritized Experience Replay
+* Distributed learning
 
-### Block Diagram
+
+## Block Diagram
 ![Cover Photo](/images/block_diag.png)
 
 
-### Simulation Parameters [simulation_params]:
+## Simulation Parameters [simulation_params]:
 
 <center>
 
@@ -23,10 +27,11 @@ Value based deep Q learning with Double DQN and prioritized experienced replay t
 |----------------	|-------------------------------------------------------	|---------------------------	|
 | load_data      	| Dictates if to load data into the replay memory       	| True / False              	|
 | load_data_path 	| The path to load the data from into the replay memory 	| Relative path to the data 	|
+| distributed_algo| Select from one of the available distributed learning algorithms 	| GlobalLearningGlobalUpdate, LocalLearningGlobalUpdate, LocalLearningLocalUpdate 	|
 
 </center>
 
-### Reinforcement Learning training parameters [RL_params]:
+## Reinforcement Learning training parameters [RL_params]:
 
 <center>
 
@@ -49,11 +54,21 @@ Value based deep Q learning with Double DQN and prioritized experienced replay t
 | learning_rate          	| The learning rate during training                                                               	| Depends on the problem   	|
 | switch_env_steps       	| The number if iterations after which to switch the initial position of the drone                	| Any positive integer     	|
 | epsilon_model          	| The model used to calculate the value of epsilon for the epsilon greedy method                  	| linear, exponential      	|
+| communication_interval          	| How often do the drones communication, num of iterations per communication                 	| Any integer value >0     	|
+| average_connectivity          	| Each drone is on average connected to how many drones| num_agent > integer > 0|
 
 </center>
 
-## Download imagenet weights for AlexNet
-The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
+## Running PEDRA for DeepQLearning:
+Following steps need to be taken to run PEDRA for DeepQLearning
+
+### 1. Download imagenet weights for AlexNet
+The default deep network used for learning is AlexNet. However other DNNs can be used by defining them as a python class in
+```
+network/network.py
+```
+
+The deep network uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
 
 [Download imagenet.npy](https://drive.google.com/open?id=1Ei4mCzjfLY5ql6ILIUHaCtAR2XF6BtAM)
 
@@ -61,27 +76,43 @@ Once downloaded, place it in
 ```
 models/imagenet.npy
 ```
+create the models folder if it doesn't exist.
 
-#### Run-time controls using PyGame screen
+### 3. Modify the config.cfg file:
+Modify the config.cfg file to reflect the user requirements such as what environment needs to be run,  how many drone should be in the environment, training mode or inrefence etc.
+
+### 4. Modify the DeepQLearning.cfg file:
+Modify the DeepQLearning file to reflect the algorithm related parameters explained above.
+
+### 2. Modify the agent (Optional):
+A PEDRA agent is a combination of network, drone and reinforcement learning functions. The figure below shows the available functions.
+
+![pedra_agent](/images/pedra_agent.png)
+
+Users can modify these functions (or add new ones) according to their requirements if need be.
+
+### 3. Run the code:
+
+```
+python main.py
+```
+### 3. Run-time controls using PyGame screen
+Based on the mode selected in the config.cfg file, the user can interact with the algorithm through a PyGame interface.
+
+#### Train Mode:
 DRL is notorious to be data hungry. For complex tasks such as drone autonomous navigation in a realistically looking environment using the front camera only, the simulation can take hours of training (typically from 8 to 12 hours on a GTX1080 GPU) before the DRL can converge. In the middle of the simulation, if you feel that you need to change a few DRL parameters, you can do that by using the PyGame screen that appears during your simulation. This can be done using the following steps
-1. Change the config file to reflect the modifications (for example decrease the learning rate) and save it.
+1. Change the DeepQLearning.cfg file to reflect the modifications (for example decrease the learning rate) and save it.
 2. Select the Pygame screen, and hit ‘backspace’. This will pause the simulation.
 3. Hit the ‘L’ key. This will load the updated parameters and will print it on the terminal.
 4. Hit the ‘backspace’ key to resume the simulation.
-Right now the simulation only updates the learning rate. Other variables can be updated too by editing the aux_function.py file for the module check_user_input
+
+![pygame_control](/images/train_keys.PNG)
+
+More functionalities can be added by editing the aux_function.py file for the module check_user_input
 
 
 
-### Inference Mode:
-To run the simulation in the inference mode, make sure the mode parameter within the [general_params] group of the config file is set to infer. Custom weights can be loaded into the network by setting the following parameters
-
-```
-custom_load_path: True
-custom_load_path: <path_to_weights>
-```
-
-
-#### Run-time controls using PyGame screen
+#### Infer Mode:
 Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the mode infer)
 
 * Backspace key: Pause/Unpause the simulation

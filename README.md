@@ -1,6 +1,6 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA)
 The tutorial/guidlines to PEDRA is divided into 4 reamde files
-1. Main readme file [this one]
+1. Main readme file (this one)
 2. [Environments readme file](/unreal_envs/readme.md)
 3. [Algorithms readme file](/algorithms/readme.md)
 4. [FAQ readme file](faq.md)
