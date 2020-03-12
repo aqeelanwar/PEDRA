@@ -53,3 +53,24 @@ DRL is notorious to be data hungry. For complex tasks such as drone autonomous n
 3. Hit the ‘L’ key. This will load the updated parameters and will print it on the terminal.
 4. Hit the ‘backspace’ key to resume the simulation.
 Right now the simulation only updates the learning rate. Other variables can be updated too by editing the aux_function.py file for the module check_user_input
+
+
+
+### Inference Phase:
+To run the simulation in the inference phase, make sure the phase parameter within the [general_params] group of the config file is set to infer. Custom weights can be loaded into the network by setting the following parameters
+
+```
+custom_load_path: True
+custom_load_path: <path_to_weights>
+```
+
+
+#### Run-time controls using PyGame screen
+Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the phase infer)
+
+* Backspace key: Pause/Unpause the simulation
+* S key: Save the altitude variation and trajectory graphs at the following location
+
+```
+unreal_env/<env_name>/results/
+```

@@ -1,24 +1,79 @@
 # PEDRA - Environments
 
-PEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. Apart from the AirSim provided features, these environments have the following features
+PEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. The environments fall into two categories.
 
-## Supported Features:
-F1:     Toggle AirSim help
-F2:     Toggle PEDRA help
-P:      print the current position of the drone
-Z:      Toggle the floorplan minimap
-1:      Toggle depth map as subwindow (AirSim)
-2:      Toggle segmentation map as subwindow (AirSim)
-3:      Toggle image from front facing camera as subwindow
-etc.
+* Indoor Environments:
+  * Indoor Long Environment
+  * Indoor Twist Environment
+  * Indoor VanLeer Environment
+  * Indoor Techno Environment
+  * Indoor Pyramid Environment
+  * Indoor FrogEyes Environment
+  * Indoor GT Environment
+  * Indoor Complex Environment
+  * Indoor UpDown Environment
+  * Indoor Cloud Environment
 
 
+* Outdoor Environments:
+  * Outdoor Courtyard
+  * Outdoor Forest
+  * Outdoor OldTown
 
 
 
 ## Indoor Environments:
-Screen shot and videos
-The video below is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it.
+  Screen shot and videos
+  The video below is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it.
+
+
+## Environment file structure:
+Each of the provided environments has the following three categories of files
+
+```
+|-- <environment_name>
+|    |-- .exe file
+|    |-- other folders
+|    |-- <env_name>_floor.png
+|    |-- config.cfg
+```
+
+### Unreal simulation files
+These files and folder are the simulation files for packaged unreal project and are not to be modified in any way (.exe, DRLwithTL, Engine etc)
+
+### Floorplan
+A .png image file of the floorplan of the environment. This can come in handy when plotting the trajectory of the drone in the inference mode, to keep track of multiple drones in the environment and to extract drone positions in the environment.  
+
+
+### Config file
+Each environment comes with a config file. This config file includes the parameters used to set the environment up. Following is the list of parameters in this config file and its explanation. This config file __should not be edited__.
+
+
+| Parameter        	| Explanation                                          |
+|------------------	|------------------------------------------------------|
+| run_name         	| Name for the current simulation                      |
+
+
+Apart from the AirSim provided features, these environments have the following features
+
+
+
+## Supported Features:
+
+| Key        	      | Feature                                                           |Category      |
+|------------------	|-------------------------------------------------------------------|--------------|
+| F2         	      | Toggle PEDRA help                                                 |PEDRA         |
+| P          	      | Display current position (x,y) and orientation (yaw) of the drone |PEDRA         |
+| Z         	      | Toggle the floorplan minimap                                      |PEDRA         |
+| F2         	      | Toggle PEDRA help                                                 |PEDRA         |
+| 1         	      | Toggle depth map as subwindow                                     |PEDRA         |
+| 2         	      | Toggle segmentation map as subwindow                              |PEDRA         |
+| 3         	      | Toggle image from front facing camera as subwindow                |PEDRA         |
+
+More PEDRA environmental features will be added in the future releases.
+
+![pedra_help](/images/pedra_help.gif)
+
 
 
 ## Moving around the environment (without algorithm)
@@ -28,11 +83,11 @@ Add images with multiple agents
 
 
 
-## Understanding the coordinates and converting between them:
+## Understanding the coordinates and conversion between them:
 Three kind of coordinates
-1. Image based coordinates
-2. Unreal Engine coordinates
-3. Physical coordinates
+1. Physical coordinates:      The coordinates of the drone in the environment (Hitting Key P displays this coordinates)
+2. Unreal Engine coordinates: The coordinates of the drone relative to the origin. This is the coordinate t
+3. Image based coordinates: The coordinates of the drone in the floorplan image
 
 
 Add details and images
@@ -40,16 +95,28 @@ Add details and images
 Details on
 
 
-# Drone Models
 
-1. ARDrone
-2. DJIMavic
-3. DJIPhantom
+## Extracting position of the drone in the environment
+Even before running your algorithm, you might want to define some key positions for the drone for example which positions should the drone reset to after crash, what should be the goal position of the drone etc. This includes finding a suitable drone position in the environment and extracting the coordinates of this position
 
-Add images
+PEDRA provides two ways of doing that
+### 1. Running PEDRA in move_around mode:
+This can be done by setting the config.cfg file to move_around mode. In this mode, keyboard can be used to navigate across the environment. This mode can help the user get an idea of the environment dynamics. The keyboard keys __a, w, s, d, left, right, up and down__ can be used to navigate around. Once the user navigates the drone to position of his/her linking, key P on the keyboard can be used to display the position of the drone on the left top part of the simulation screen. Each position array displayed has three parts
+```
+[x_physical, y_physical, yaw_degrees]
+```
+
+These values can directly be fed into the orig_ip variable of the initial_positions.py file. This makes it accessible to the PEDRA code.
+The figure below show
 
 
-### Setting initial positions for drone
-environments -> initial_positions.py can be used to set the initial positions for the drone in the environments that can then be accessed through the code.
+### 2. Running retreive_positions.py:
+The second way of extracting desirable drone position is to use the python file retreive_positions.py
+```
+cd PEDRA
+python retrieve_positions.py
+```
+Running this will open the directory for the user to select the floorplan of the required environment. Once the user selects the floorplan, moue cursor can be used to click in the floorplan to extract the drone coordinates. All three coordinates corresponding to the position selected are displayed on the left top part of the display window.
+In order to use these coordinates in the initial_positions.oy file, make sure you use the physical coordinates.
 
 Talk about the format and all.

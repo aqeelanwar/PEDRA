@@ -171,6 +171,17 @@ Running main.py carries out the following steps
 
 At this point, the drone can be seen moving around in the environment.
 
+
+## Available drone agents:
+1. ARDrone
+2. DJIMavic
+3. DJIPhantom
+
+The images of these drones can be seen below.
+![drone_types](/images/drone_types.png)
+Different action space can be associated with each of these drones.
+
+
 ## Supported modes:
 The config file can be used to select the mode the simulation needs to be run in.
 * __train__:        Signifies the training mode, used as an input flag for algorithm to be implemented
@@ -199,34 +210,17 @@ tensorboard --logdir e2e                         # Example
 The terminal will display the local URL that can be opened up on any browser, and the tensorboard display will appear plotting the DRL parameters on run-time.
 ![tensorboard](/images/tf.png)
 
-#### Run-time controls using PyGame screen
+## Run-time controls using PyGame screen
 Algorithmic specific controls can be defined and accessed using the PyGame screen. More information can be found [here](algorithms/readme.md)
 
 
-### Inference Phase:
-To run the simulation in the inference phase, make sure the phase parameter within the [general_params] group of the config file is set to infer. Custom weights can be loaded into the network by setting the following parameters
-
-```
-custom_load_path: True
-custom_load_path: <path_to_weights>
-```
-
-#### Output graphs
+## Output graphs
 The simulation updates two graphs in real-time. The first graph is the altitude variation of the drone, while the other one is the drone trajectory mapped onto the environment floorplan. The trajectory graph also reports the total distance traveled by the drone before crash.
 
 ![Inference graphs](/images/infer.gif)
 
 More algorithm specific graphs can be added by making use of the floorplan provide with the environment.
 
-#### Run-time controls using PyGame screen
-Right now the simulation supports only the following two functionalities (other functionalities can be added by modifying the check_user_input module in the aux_function.py file for the phase infer)
-
-* Backspace key: Pause/Unpause the simulation
-* S key: Save the altitude variation and trajectory graphs at the following location
-
-```
-unreal_env/<env_name>/results/
-```
 
 # Example: Deep Reinforcement Learning with Transfer Learning (DRLwithTL-Sim)
 
