@@ -99,11 +99,11 @@ There are three kind of coordinates in which the drone position can be expressed
 <img src="/images/coordinate_conversion.png">
 </p>
 
+<p align="center">
+<img width = 600 src="/images/coordinate_conversion_params.png">
+</p>
+
 Within PEDRA, we always use the PEDRA coordinates to deal with drone positions with an exception being the environments/initial_positions.py file. In this file the drone coordinates are expressed in the physical coordinates.
-
-Add details and images
-
-Details on
 
 
 
