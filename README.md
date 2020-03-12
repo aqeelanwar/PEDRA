@@ -62,7 +62,7 @@ Once you have the required packages and software installed, you can take the fol
 ## Download a simulated environment
 You can either manually create your own environment using Unreal Engine (See FAQ below to install AirSim Plugin if you plan on creating your own environment), or you can download one of the environments from the link below.
 
-[Download Environments](https://drive.google.com/open?id=1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z)
+[Download Environments](https://gtvault-my.sharepoint.com/:f:/g/personal/manwar8_gatech_edu/EnCc2xWKBCpIkWseegrp1EYB69y0zS3nLqzsaSfE-KAD4g?e=HtI1ck)
 
 Following environments are available for download
 
