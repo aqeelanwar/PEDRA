@@ -29,7 +29,7 @@ PEDRA comes equip with a library of 3D realistic environments that can be used f
 The videos above is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it.
 
 ## Downloading the environments
-The compressed zip file of environments can be downloaded from [here](link here). Once downloaded, extract the zip file into the ureal_envs folder
+The compressed zip file of environments can be downloaded from [here](link here). Once downloaded, extract the zip file into the unreal_envs folder
 
 
 ## Environment file structure:
@@ -53,6 +53,7 @@ A .png image file of the floorplan of the environment. This can come in handy wh
 ### Config file
 Each environment comes with a config file. This config file includes the parameters used to set the environment up. Following is the list of parameters in this config file and its explanation. This config file __should not be edited__.
 
+<center>
 
 | Parameter        	| Explanation                                                        |
 |------------------	|--------------------------------------------------------------------|
@@ -65,6 +66,7 @@ Each environment comes with a config file. This config file includes the paramet
 |floor_z:            |Height of the floor in physical coordinates |
 |player_start_z:     |Height of the origin (player start) in physical coordinates |
 
+</center>
 
 The image coordinates, PEDRA coordinates and physical coordinates are explained below. In case of an outdoor environment, the value of ceiling_z is ser to 10000 meaning that their is no ceiling.
 
@@ -72,6 +74,7 @@ The image coordinates, PEDRA coordinates and physical coordinates are explained 
 
 ## Environment Supported Features:
 While the simulation screen is on, following keys can be used to interactive with it.
+<center>
 
 | Key        	      | Feature                                                           |Category      |
 |------------------	|-------------------------------------------------------------------|--------------|
@@ -81,6 +84,8 @@ While the simulation screen is on, following keys can be used to interactive wit
 | 1         	      | Toggle depth map as subwindow                                     |AirSim        |
 | 2         	      | Toggle segmentation map as subwindow                              |AirSim        |
 | 3         	      | Toggle image from front facing camera as subwindow                |AirSim        |
+
+</center>
 
 <p align="center">
 <img src="/images/pedra_help.gif">

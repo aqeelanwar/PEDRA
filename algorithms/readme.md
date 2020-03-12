@@ -7,13 +7,16 @@ Value based deep Q learning with Double DQN and prioritized experienced replay
 
 
 ### Simulation Parameters [simulation_params]:
+<center>
 
 | Parameter      	| Explanation                                           	| Possible values           	|
 |----------------	|-------------------------------------------------------	|---------------------------	|
 | load_data      	| Dictates if to load data into the replay memory       	| True / False              	|
 | load_data_path 	| The path to load the data from into the replay memory 	| Relative path to the data 	|
 
+</center>
 ### Reinforcement Learning training parameters [RL_params]:
+<center>
 
 | Parameter              	| Explanation                                                                                     	| Possible values          	|
 |------------------------	|-------------------------------------------------------------------------------------------------	|--------------------------	|
@@ -35,6 +38,7 @@ Value based deep Q learning with Double DQN and prioritized experienced replay
 | switch_env_steps       	| The number if iterations after which to switch the initial position of the drone                	| Any positive integer     	|
 | epsilon_model          	| The model used to calculate the value of epsilon for the epsilon greedy method                  	| linear, exponential      	|
 
+</center>
 
 ## Download imagenet weights for AlexNet
 The DQN uses Imagenet learned weights for AlexNet to initialize the layers. Following link can be used to download the imagenet.npy file.
