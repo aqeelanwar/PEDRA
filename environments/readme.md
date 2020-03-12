@@ -111,7 +111,7 @@ This can be done by setting the config.cfg file to move_around mode. In this mod
 
 
 <p align="center">
-<img src="/images/print_position.png">
+<img src="/images/print_position.PNG">
 </p>
 
 
@@ -121,7 +121,7 @@ These values can directly be fed into the orig_ip variable of the environments/i
 [x coord, y coord, yaw]
 ```
 <p align="center">
-<img src="/images/initial_positions_py.png">
+<img src="/images/initial_positions_py.PNG">
 </p>
 
 
