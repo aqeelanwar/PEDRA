@@ -3,7 +3,7 @@
 # Email: aqeel.anwar@gatech.edu
 
 import sys, cv2
-from network.agent import DeepAgent
+from network.agent import PedraAgent
 from unreal_envs.initial_positions import *
 from os import getpid
 from network.Memory import Memory
@@ -53,14 +53,14 @@ def DeepQLearning(cfg):
                 name_agent_list.append(name_agent)
                 print_orderly(name_agent, 40)
                 ReplayMemory[name_agent] = Memory(algorithm_cfg.buffer_len)
-                agent[name_agent] = DeepAgent(algorithm_cfg, client, name = 'DQN', vehicle_name = name_agent)
-                target_agent[name_agent] = DeepAgent(algorithm_cfg, client, name= 'Target', vehicle_name = name_agent)
+                agent[name_agent] = PedraAgent(algorithm_cfg, client, name = 'DQN', vehicle_name = name_agent)
+                target_agent[name_agent] = PedraAgent(algorithm_cfg, client, name= 'Target', vehicle_name = name_agent)
                 current_state[name_agent] = agent[name_agent].get_state()
 
         elif cfg.mode == 'infer':
             name_agent = 'drone0'
             name_agent_list.append(name_agent)
-            agent[name_agent] = DeepAgent(algorithm_cfg, client, name = name_agent + 'DQN', vehicle_name = name_agent)
+            agent[name_agent] = PedraAgent(algorithm_cfg, client, name = name_agent + 'DQN', vehicle_name = name_agent)
 
             env_cfg = read_cfg(config_filename=env_folder+'config.cfg')
             nav_x = []

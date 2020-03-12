@@ -96,7 +96,7 @@ Users can modify these functions (or add new ones) according to their requiremen
 ```
 python main.py
 ```
-### 3. Run-time controls using PyGame screen
+### 4. Run-time controls using PyGame screen
 Based on the mode selected in the config.cfg file, the user can interact with the algorithm through a PyGame interface.
 
 #### Train Mode:
@@ -121,3 +121,52 @@ Right now the simulation supports only the following two functionalities (other 
 ```
 unreal_env/<env_name>/results/
 ```
+
+### 4. Monitor the outputs
+Following outputs are generated
+#### a. Tensorboard learning parameters
+
+## Viewing learning parameters using tensorboard
+During simulation, tensorflow parameters such as epsilon, learning rate, average Q values, loss and return can be viewed on the tensorboard. The path of the tensorboard log files depends on the env_type, env_name and train_type set in the config file and is given by
+```
+models/trained/<env_type>/<env_name>/Imagenet/   # Generic path
+models/trained/Indoor/indoor_long/Imagenet/      # Example path
+```
+
+Once identified where the log files are stored, following command can be used on the terminal to activate tensorboard.
+```
+cd models/trained/Indoor/indoor_long/Imagenet/
+tensorboard --logdir <train_type>                # Generic
+tensorboard --logdir e2e                         # Example
+```
+
+The terminal will display the local URL that can be opened up on any browser, and the tensorboard display will appear plotting the DRL parameters on run-time.
+![tensorboard](/images/tf.png)
+
+### b. Log files:
+The simulation generates algorithmic log files as txt files which can be viewed for troubleshooting. This log file is saved at the following path
+```
+# Log file path
+|-- PEDRA
+|    |-- models
+|    |    |-- trained
+|    |    |    |-- <env_type>                           #e.g. Indoor
+|    |    |    |    |-- Imagenet
+|    |    |    |    |    |-- <train_type>               #e.g e2e
+|    |    |    |    |    |    |-- drone<i>              #e.g. drone0
+|    |    |    |    |    |    |    |-- <mode>log.txt    #e.g trainlog.txt
+```
+#### Train Log:
+Example train log generated can be seem below
+<p align="center">
+<img width = 800 src="/images/trainlog.PNG">
+</p>
+
+#### Infer Log:
+Example infer log generated can be seem below
+<p align="center">
+<img width = 400 src="/images/inferlog.PNG">
+</p>
+
+
+2. Network weights

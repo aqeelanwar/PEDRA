@@ -11,7 +11,7 @@ from PIL import Image
 from network.loss_functions import *
 from numpy import linalg as LA
 
-class DeepAgent():
+class PedraAgent():
     def __init__(self, cfg, client, name, vehicle_name):
         half_name = name.replace(vehicle_name, '')
         print('Initializing ', half_name)
