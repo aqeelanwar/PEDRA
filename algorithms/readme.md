@@ -1,12 +1,22 @@
 # PEDRA - Provided Algorithms
-## 1. Deep Q-learning
-Value based deep Q learning with Double DQN and prioritized experienced replay
+
+This readme file explains the PEDRA available algorithms that can be used in the config file.
+
+## 1. Deep Q-learning (__*DeepQLearning*__)
+```
+config.cfg
+
+algorithm:    DeepQLearning
+```
+
+Value based deep Q learning with Double DQN and prioritized experienced replay that supports distributed learning.
 
 ### Block Diagram
 ![Cover Photo](/images/block_diag.png)
 
 
 ### Simulation Parameters [simulation_params]:
+
 <center>
 
 | Parameter      	| Explanation                                           	| Possible values           	|
@@ -15,7 +25,9 @@ Value based deep Q learning with Double DQN and prioritized experienced replay
 | load_data_path 	| The path to load the data from into the replay memory 	| Relative path to the data 	|
 
 </center>
+
 ### Reinforcement Learning training parameters [RL_params]:
+
 <center>
 
 | Parameter              	| Explanation                                                                                     	| Possible values          	|
