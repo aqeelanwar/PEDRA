@@ -118,6 +118,7 @@ Two types of configuration files are available to control general simulation par
 This config file is used to set high-level simulation parameters. The complete list of parameters and their explanation can be seen below.
 
 #### General Parameters [general_params]:
+
 <center>
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
@@ -136,7 +137,9 @@ This config file is used to set high-level simulation parameters. The complete l
 | num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
 
 </center>
+
 #### Camera Parameters [camera_params]:
+
 <center>
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
@@ -146,6 +149,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | fov_degrees 	    | Camera field of view in degrees                                                   | Any value >0                    	|
 
 </center>
+
 ### Algorithm-specific configurations:
 ```
 # Example
