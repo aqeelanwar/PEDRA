@@ -159,13 +159,13 @@ The simulation generates algorithmic log files as txt files which can be viewed 
 #### Train Log:
 Example train log generated can be seen below
 <p align="center">
-<img width = 1200 src="/images/trainlog.PNG">
+<img width = 1000 src="/images/trainlog.PNG">
 </p>
 
 #### Infer Log:
 Example infer log generated can be seen below
 <p align="center">
-<img width = 600 src="/images/inferlog.PNG">
+<img width = 500 src="/images/inferlog.PNG">
 </p>
 
 
