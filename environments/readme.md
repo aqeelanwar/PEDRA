@@ -1,5 +1,10 @@
 # PEDRA - Environments
 
+<p align="center">
+<img src="/images/envs.png">
+</p>
+
+
 PEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. The environments fall into two categories.
 
 * Indoor Environments:
@@ -21,10 +26,10 @@ PEDRA comes equip with a library of 3D realistic environments that can be used f
   * Outdoor OldTown
 
 
+The videos above is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it.
 
-## Indoor Environments:
-  Screen shot and videos
-  The video below is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it.
+## Downloading the environments
+The compressed zip file of environments can be downloaded from [here](link here). Once downloaded, extract the zip file into the ureal_envs folder
 
 
 ## Environment file structure:
@@ -49,16 +54,24 @@ A .png image file of the floorplan of the environment. This can come in handy wh
 Each environment comes with a config file. This config file includes the parameters used to set the environment up. Following is the list of parameters in this config file and its explanation. This config file __should not be edited__.
 
 
-| Parameter        	| Explanation                                          |
-|------------------	|------------------------------------------------------|
-| run_name         	| Name for the current simulation                      |
+| Parameter        	| Explanation                                                        |
+|------------------	|--------------------------------------------------------------------|
+| env_name         	| Name for the environment this config file is associated with       |
+|floorplan:          | The name of the floorplan image file                              |
+|o_x:                |X coordinates of origin (player start) in the image coordinates |
+|o_y:                |Y coordinates of origin (player start) in the image coordinates |
+|alpha:              |The scaling constant from PEDRA coordinates to image coordinates |
+|ceiling_z:          |Height of the ceiling in physical coordinates |
+|floor_z:            |Height of the floor in physical coordinates |
+|player_start_z:     |Height of the origin (player start) in physical coordinates |
 
 
-Apart from the AirSim provided features, these environments have the following features
+The image coordinates, PEDRA coordinates and physical coordinates are explained below. In case of an outdoor environment, the value of ceiling_z is ser to 10000 meaning that their is no ceiling.
 
 
 
-## Supported Features:
+## Environment Supported Features:
+While the simulation screen is on, following keys can be used to interactive with it.
 
 | Key        	      | Feature                                                           |Category      |
 |------------------	|-------------------------------------------------------------------|--------------|
@@ -69,28 +82,24 @@ Apart from the AirSim provided features, these environments have the following f
 | 2         	      | Toggle segmentation map as subwindow                              |AirSim        |
 | 3         	      | Toggle image from front facing camera as subwindow                |AirSim        |
 
-More PEDRA environmental features will be added in the future releases.
-
 <p align="center">
 <img src="/images/pedra_help.gif">
 </p>
 
-
-
-
-## Moving around the environment (without algorithm)
-Computer Vision mode and using the keys to move around. If you like any position to be used in the code hit the key P.
-
-Add images with multiple agents
-
+More PEDRA environmental features will be added in the future releases.
 
 
 ## Understanding the coordinates and conversion between them:
-Three kind of coordinates
+There are three kind of coordinates in which the drone position can be expressed in.
 1. Physical coordinates:      The coordinates of the drone in the environment (Hitting Key P displays this coordinates)
-2. Unreal Engine coordinates: The coordinates of the drone relative to the origin. This is the coordinate t
-3. Image based coordinates: The coordinates of the drone in the floorplan image
+2. PEDRA coordinates (AirSim Coordiantes): The coordinates of the drone relative to the origin (player start). This is the coordinate in which PEDRA deals. Whenever a request is made from PEDRA to get the current position of the drone through AirSim, these coordinates are returned and vice versa.
+3. Image based coordinates: The coordinates of the drone in the floorplan image. Its a mapping of the actual drone coordinates onto the image map.
 
+<p align="center">
+<img src="/images/coordinate_conversion.png">
+</p>
+
+Within PEDRA, we always use the PEDRA coordinates to deal with drone positions with an exception being the environments/initial_positions.py file. In this file the drone coordinates are expressed in the physical coordinates.
 
 Add details and images
 
@@ -138,6 +147,3 @@ In order to use these coordinates in the initial_positions.py file, make sure yo
 <p align="center">
 <img src="/images/retrieve_initial_positions.gif">
 </p>
-
-
-Talk about the format and all.
