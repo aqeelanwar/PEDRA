@@ -33,10 +33,40 @@ def save_network_path(cfg, algorithm_cfg):
     return cfg, algorithm_cfg
 
 
+def communicate_across_agents(agent, name_agent_list, algorithm_cfg):
+    name_agent = name_agent_list[0]
+    update_done = False
+    if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate':
+        # No need to do anything
+        update_done = True
+
+    elif algorithm_cfg.distributed_algo == 'LocalLearningGlobalUpdate':
+        agent_on_same_network = name_agent_list
+        agent[name_agent].initialize_graphs_with_average(agent, agent_on_same_network)
+
+    elif algorithm_cfg.distributed_algo == 'LocalLearningLocalUpdate':
+        agent_connectivity_graph = []
+        for j in range(int(np.floor(len(name_agent_list) / algorithm_cfg.average_connectivity))):
+            div1 = random.sample(name_agent_list, algorithm_cfg.average_connectivity)
+            # print(div1)
+            agent_connectivity_graph.append(div1)
+            name_agent_list = list(set(name_agent_list) - set(div1))
+
+        if name_agent_list:
+            agent_connectivity_graph.append(name_agent_list)
+
+
+        for agent_network in agent_connectivity_graph:
+            agent_on_same_network = agent_network
+            agent[name_agent].initialize_graphs_with_average(agent, agent_on_same_network)
+
+    return update_done
 
 def start_environment(env_name):
+    print_orderly('Environment', 80)
     env_folder = os.path.dirname(os.path.abspath(__file__)) + "/unreal_envs/" + env_name + "/"
     path = env_folder + env_name + ".exe"
+    # env_process = []
     env_process = subprocess.Popen(path)
     time.sleep(5)
     print("Successfully loaded environment: " + env_name)
@@ -50,6 +80,7 @@ def initialize_infer(env_cfg, client, env_folder):
         os.makedirs(env_folder+'results')
 
     # Mapping floor to 0 height
+    f_z = env_cfg.floor_z/100
     c_z = (env_cfg.ceiling_z-env_cfg.floor_z)/100
     p_z = (env_cfg.player_start_z-env_cfg.floor_z)/100
 
@@ -72,7 +103,7 @@ def initialize_infer(env_cfg, client, env_folder):
     nav, = ax_nav.plot(env_cfg.o_x, env_cfg.o_y)
 
 
-    return p_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav
+    return p_z,f_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav
 
 def translate_action(action, num_actions):
     # action_word = ['Forward', 'Right', 'Left', 'Sharp Right', 'Sharp Left']
@@ -159,7 +190,7 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
     return curr_states, Q_target, actions, err, idx
 
 
-def policy(epsilon,curr_state, iter, b, epsilon_model, wait_before_train, num_actions, agent):
+def policy(epsilon, curr_state, iter, b, epsilon_model, wait_before_train, num_actions, agent):
     qvals=[]
 
     epsilon_ceil=0.95
@@ -184,28 +215,47 @@ def policy(epsilon,curr_state, iter, b, epsilon_model, wait_before_train, num_ac
         # print(action_array/(np.mean(action_array)))
     return action, action_type, epsilon, qvals
 
-def reset_to_initial(level, reset_array, client):
-    reset_pos = reset_array[level]
+def reset_to_initial(level, reset_array, client, vehicle_name):
+    # client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.01, vehicle_name=vehicle_name)
+    reset_pos = reset_array[vehicle_name][level]
+    # reset_pos = p
 
-    client.simSetVehiclePose(reset_pos, ignore_collison=True)
-    time.sleep(0.1)
+    client.simSetVehiclePose(reset_pos, ignore_collison=True, vehicle_name=vehicle_name)
+    time.sleep(0.05)
 
+def print_orderly(str, n):
+    print('')
+    hyphens = '-' * int((n - len(str)) / 2)
+    print(hyphens + ' ' + str + ' ' + hyphens)
 
-def connect_drone(ip_address='127.0.0.0', phase='infer'):
-    print('------------------------------ Drone ------------------------------')
+def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1):
+    print_orderly('Drone', 80)
     client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
     client.confirmConnection()
-    old_posit = client.simGetVehiclePose()
+    # old_posit = client.simGetVehiclePose()
     # if phase == 'train':
     #     client.simSetVehiclePose(
     #         airsim.Pose(airsim.Vector3r(0, 0, 0), old_posit.orientation),
     #         ignore_collison=True)
     # elif phase == 'infer':
-    client.enableApiControl(True)
-    client.armDisarm(True)
-    client.takeoffAsync().join()
 
-    return client, old_posit
+
+    # print("Yes")
+    old_posit = {}
+    for agents in range(num_agents):
+        name_agent = "drone"+ str(agents)
+        client.enableApiControl(True, name_agent)
+        client.armDisarm(True, name_agent)
+        client.takeoffAsync(vehicle_name=name_agent).join()
+        old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
+
+    initZ = old_posit[name_agent].position.z_val
+
+    # client.enableApiControl(True)
+    # client.armDisarm(True)
+    # client.takeoffAsync().join()
+
+    return client, old_posit, initZ
 
 def blit_text(surface, text, pos, font, color=pygame.Color('black')):
     words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
@@ -250,7 +300,8 @@ def pygame_connect(phase):
 
     return screen
 
-def check_user_input(active, automate, lr, epsilon, agent, network_path, client, old_posit, initZ, phase, fig_z, fig_nav, env_folder):
+def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, fig_nav, env_folder,cfg, algorithm_cfg):
+    # algorithm_cfg.learning_rate, algorithm_cfg.epsilon,algorithm_cfg.network_path,cfg.mode,
     for event in pygame.event.get():
 
         if event.type == pygame.QUIT:
@@ -258,44 +309,35 @@ def check_user_input(active, automate, lr, epsilon, agent, network_path, client,
             pygame.quit()
 
         # Training keys control
-        if event.type == pygame.KEYDOWN and phase =='train':
+        if event.type == pygame.KEYDOWN and cfg.mode =='train':
             if event.key == pygame.K_l:
                 # Load the parameters - epsilon
-                cfg = read_cfg(config_filename='configs/config.cfg', verbose=False)
-                lr = cfg.lr
+                path = 'configs/' + cfg.algorithm + '.cfg'
+                algorithm_cfg = read_cfg(config_filename=path, verbose=False)
+                cfg, algorithm_cfg = save_network_path(cfg=cfg, algorithm_cfg=algorithm_cfg)
                 print('Updated Parameters')
-                print('Learning Rate: ', cfg.lr)
 
             if event.key == pygame.K_RETURN:
                 # take_action(-1)
                 automate = False
                 print('Saving Model')
                 # agent.save_network(iter, save_path, ' ')
-                agent.save_network(network_path)
+                agent.save_network(algorithm_cfg.network_path)
                 # agent.save_data(iter, data_tuple, tuple_path)
-                print('Model Saved: ', network_path)
+                print('Model Saved: ', algorithm_cfg.network_path)
 
 
             if event.key == pygame.K_BACKSPACE:
                 automate = automate ^ True
 
             if event.key == pygame.K_r:
-                # reconnect
-                client = []
-                client = airsim.MultirotorClient()
-                client.confirmConnection()
-                # posit1_old = client.simGetVehiclePose()
-                client.simSetVehiclePose(old_posit,
-                                         ignore_collison=True)
+                client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode,
+                                                         num_agents=cfg.num_agents)
+
                 agent.client = client
 
-            if event.key == pygame.K_m:
-                agent.get_state()
-                print('got_state')
-                # automate = automate ^ True
 
             # Set the routine for manual control if not automate
-
             if not automate:
                 # print('manual')
                 # action=[-1]
@@ -320,7 +362,7 @@ def check_user_input(active, automate, lr, epsilon, agent, network_path, client,
                     client.reset()
                 # agent.take_action(action)
 
-        elif event.type == pygame.KEYDOWN and phase == 'infer':
+        elif event.type == pygame.KEYDOWN and cfg.mode == 'infer':
             if event.key == pygame.K_s:
                 # Save the figures
                 file_path = env_folder + 'results/'
@@ -332,7 +374,7 @@ def check_user_input(active, automate, lr, epsilon, agent, network_path, client,
                 client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.1)
                 automate = automate ^ True
 
-    return active, automate, lr, client
+    return active, automate, algorithm_cfg, client
 
 
 

@@ -3,343 +3,375 @@
 # Email: aqeel.anwar@gatech.edu
 
 import sys, cv2
-from network.agent import DeepAgent
-from environments.initial_positions import *
+from network.agent import PedraAgent
+from unreal_envs.initial_positions import *
 from os import getpid
 from network.Memory import Memory
 from aux_functions import *
 import os, json
 from util.transformations import euler_from_quaternion
 
-
-
-def generate_json(cfg):
-    path = os.path.expanduser('~\Documents\Airsim')
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    filename = path + '\settings.json'
-
-    data = {}
-    data['SettingsVersion'] = 1.2
-    data['LocalHostIp'] = cfg.ip_address
-    data['SimMode'] = cfg.SimMode
-    data['ClockSpeed'] = cfg.ClockSpeed
-
-    PawnPaths = {}
-    PawnPaths["DefaultQuadrotor"] = {}
-    PawnPaths["DefaultQuadrotor"]['PawnBP'] = ''' Class'/AirSim/Blueprints/BP_''' + cfg.drone + '''.BP_''' + cfg.drone + '''_C' '''
-    data['PawnPaths']=PawnPaths
-
-    CameraDefaults = {}
-    CameraDefaults['CaptureSettings']=[]
-    # CaptureSettings=[]
-
-    camera = {}
-    camera['ImageType'] = 0
-    camera['Width'] = cfg.width
-    camera['Height'] = cfg.height
-    camera['FOV_Degrees'] = cfg.fov_degrees
-
-    CameraDefaults['CaptureSettings'].append(camera)
-
-    camera = {}
-    camera['ImageType'] = 3
-    camera['Width'] = cfg.width
-    camera['Height'] = cfg.height
-    camera['FOV_Degrees'] = cfg.fov_degrees
-
-    CameraDefaults['CaptureSettings'].append(camera)
-
-    data['CameraDefaults'] = CameraDefaults
-    with open(filename, 'w') as outfile:
-        json.dump(data, outfile, indent=4)
-
-
 def DeepQLearning(cfg):
-    algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
-    generate_json(cfg)
-    # Start the environment
-    env_process, env_folder = start_environment(env_name=cfg.env_name)
+    if cfg.mode == 'move_around':
+        env_process, env_folder = start_environment(env_name=cfg.env_name)
+    else:
+        algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
 
-    # Get memory handler
-    process = psutil.Process(getpid())
-    # Load PyGame Screen
-    screen = pygame_connect(phase = cfg.phase)
+        if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate' or cfg.mode == 'infer':
+            cfg.num_agents = 1
 
-    # Load the initial positions for the environment
-    reset_array, level_name, crash_threshold, initZ = initial_positions(cfg.env_name)
+        # Start the environment
+        env_process, env_folder = start_environment(env_name=cfg.env_name)
+        # Connect to Unreal Engine and get the drone handle: client
+        client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode, num_agents=cfg.num_agents)
+        initial_pos = old_posit.copy()
+        # Load the initial positions for the environment
+        reset_array, reset_array_raw, level_name, crash_threshold = initial_positions(cfg.env_name, initZ, cfg.num_agents)
+        # Get memory handler
+        process = psutil.Process(getpid())
+        # Load PyGame Screen
+        screen = pygame_connect(phase=cfg.mode)
 
-    # Generate path where the weights will be saved
-    cfg, algorithm_cfg = save_network_path(cfg=cfg, algorithm_cfg=algorithm_cfg)
+        fig_z = []
+        fig_nav = []
+        debug = False
 
-    # Replay Memory for RL
-    ReplayMemory = Memory(algorithm_cfg.buffer_len)
 
-    # Connect to Unreal Engine and get the drone handle: client
-    client, old_posit = connect_drone(ip_address=cfg.ip_address, phase=cfg.phase)
+        # Generate path where the weights will be saved
+        cfg, algorithm_cfg = save_network_path(cfg=cfg, algorithm_cfg=algorithm_cfg)
+        current_state = {}
+        new_state = {}
+        posit = {}
+        name_agent_list = []
+        agent = {}
+        # Replay Memory for RL
+        if cfg.mode == 'train':
+            ReplayMemory = {}
+            target_agent = {}
+            for drone in range(cfg.num_agents):
+                name_agent = "drone" + str(drone)
+                name_agent_list.append(name_agent)
+                print_orderly(name_agent, 40)
+                ReplayMemory[name_agent] = Memory(algorithm_cfg.buffer_len)
+                agent[name_agent] = PedraAgent(algorithm_cfg, client, name = 'DQN', vehicle_name = name_agent)
+                target_agent[name_agent] = PedraAgent(algorithm_cfg, client, name= 'Target', vehicle_name = name_agent)
+                current_state[name_agent] = agent[name_agent].get_state()
 
-    fig_z=[]
-    fig_nav=[]
+        elif cfg.mode == 'infer':
+            name_agent = 'drone0'
+            name_agent_list.append(name_agent)
+            agent[name_agent] = PedraAgent(algorithm_cfg, client, name = name_agent + 'DQN', vehicle_name = name_agent)
 
-    show_depthmap = False
+            env_cfg = read_cfg(config_filename=env_folder+'config.cfg')
+            nav_x = []
+            nav_y = []
+            altitude = {}
+            altitude[name_agent] = []
+            p_z,f_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav = initialize_infer(env_cfg=env_cfg, client=client, env_folder=env_folder)
+            nav_text = ax_nav.text(0, 0, '')
 
-    # Define DQN agents
-    agent = DeepAgent(algorithm_cfg, client, name='DQN')
-    if cfg.phase == 'train':
-        target_agent = DeepAgent(algorithm_cfg, client, name='Target')
+        # Initialize variables
+        iter = 1
+        # num_collisions = 0
+        episode = {}
+        active = True
 
-    elif cfg.phase == 'infer':
-        env_cfg = read_cfg(config_filename=env_folder+'config.cfg')
-        nav_x = []
-        nav_y = []
-        altitude=[]
-        p_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav = initialize_infer(env_cfg=env_cfg, client=client, env_folder=env_folder)
-        nav_text = ax_nav.text(0, 0, '')
+        print_interval = 1
+        automate = True
+        choose = False
+        print_qval = False
+        last_crash = {}
+        ret = {}
+        num_collisions = {}
+        level = {}
+        level_state = {}
+        level_posit = {}
+        times_switch = {}
+        last_crash_array ={}
+        ret_array ={}
+        distance_array ={}
+        epi_env_array = {}
+        log_files = {}
 
-    # Initialize variables
-    iter = 0
-    num_collisions = 0
-    episode = 0
-    active = True
+        # If the phase is inference force the num_agents to 1
+        hyphens = '-' * int((80 - len('Log files')) / 2)
+        print(hyphens + ' ' + 'Log files' + ' ' + hyphens)
+        for name_agent in name_agent_list:
+            ret[name_agent] = 0
+            num_collisions[name_agent] = 0
+            last_crash[name_agent] = 0
+            level[name_agent] = 0
+            episode[name_agent] = 0
+            level_state[name_agent] = [None] * len(reset_array[name_agent])
+            level_posit[name_agent] = [None] * len(reset_array[name_agent])
+            times_switch[name_agent] = 0
+            last_crash_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]), dtype=np.int32)
+            ret_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]))
+            distance_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]))
+            epi_env_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]), dtype=np.int32)
 
-    automate = True
-    choose = False
-    print_qval = False
-    last_crash = 0
-    ret = 0
-    distance = 0
-    switch_env = False
-    level = 0
-    times_switch = 0
-    save_posit = old_posit
-    level_state = [None]*len(level_name)
-    level_posit = [None]*len(level_name)
-    last_crash_array = np.zeros(shape=len(level_name), dtype=np.int32)
-    ret_array = np.zeros(shape=len(level_name))
-    distance_array = np.zeros(shape=len(level_name))
-    epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
+            # Log file
+            log_path = algorithm_cfg.network_path + '/' +name_agent +'/'+ cfg.mode + 'log.txt'
+            print("Log path: ", log_path)
+            log_files[name_agent] = open(log_path, 'w')
 
-    current_state = agent.get_state()
+        distance = 0
+        # switch_env = False
 
-    # Log file
-    log_path = algorithm_cfg.network_path+ '_'+ cfg.phase +'log.txt'
-    print("Log path: ", log_path)
-    f = open(log_path, 'w')
+        print_orderly('Simulation begins', 80)
 
-    while active:
-        try:
-            active, automate, algorithm_cfg.learning_rate, client = check_user_input(active, automate,algorithm_cfg.learning_rate, algorithm_cfg.epsilon, agent, algorithm_cfg.network_path, client, old_posit, initZ, cfg.phase, fig_z, fig_nav, env_folder)
 
-            if automate:
+        # save_posit = old_posit
 
-                if cfg.phase == 'train':
 
-                    start_time = time.time()
-                    if switch_env:
-                        posit1_old = client.simGetVehiclePose()
-                        times_switch=times_switch+1
-                        level_state[level] = current_state
-                        level_posit[level] = posit1_old
-                        last_crash_array[level] = last_crash
-                        ret_array[level] = ret
-                        distance_array[level] = distance
-                        epi_env_array[int(level/3)] = episode
+        # last_crash_array = np.zeros(shape=len(level_name), dtype=np.int32)
+        # ret_array = np.zeros(shape=len(level_name))
+        # distance_array = np.zeros(shape=len(level_name))
+        # epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
 
-                        level = (level + 1) % len(reset_array)
 
-                        print('Transferring to level: ', level,' - ', level_name[level])
+        while active:
+            try:
+                active, automate, algorithm_cfg, client = check_user_input(active, automate, agent[name_agent], client, old_posit[name_agent], initZ, fig_z, fig_nav, env_folder, cfg, algorithm_cfg)
 
-                        if times_switch < len(reset_array):
-                            reset_to_initial(level, reset_array, client)
+                if automate:
+
+                    if cfg.mode == 'train':
+
+                        if iter % algorithm_cfg.switch_env_steps == 0:
+                            switch_env = True
                         else:
-                            current_state = level_state[level]
-                            posit1_old = level_posit[level]
+                            switch_env = False
 
-                            reset_to_initial(level, reset_array, client)
-                            client.simSetVehiclePose(posit1_old, ignore_collison=True)
-                            time.sleep(0.1)
+                        for name_agent in name_agent_list:
 
-                        last_crash = last_crash_array[level]
-                        ret = ret_array[level]
-                        distance = distance_array[level]
-                        episode = epi_env_array[int(level/3)]
-                        # environ = environ^True
+                            start_time = time.time()
+                            if switch_env:
+                                posit1_old = client.simGetVehiclePose(vehicle_name=name_agent)
+                                times_switch[name_agent] = times_switch[name_agent]+1
+                                level_state[name_agent][level[name_agent]] = current_state[name_agent]
+                                level_posit[name_agent][level[name_agent]] = posit1_old
+                                last_crash_array[name_agent][level[name_agent]] = last_crash[name_agent]
+                                ret_array[name_agent][level[name_agent]] = ret[name_agent]
+                                distance_array[name_agent][level[name_agent]] = distance
+                                epi_env_array[name_agent][level[name_agent]] = episode[name_agent]
 
-                    action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon, current_state, iter, algorithm_cfg.epsilon_saturation,algorithm_cfg.epsilon_model,  algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent)
+                                level[name_agent] = (level[name_agent] + 1) % len(reset_array[name_agent])
 
-                    action_word = translate_action(action, algorithm_cfg.num_actions)
-                    # Take the action
-                    agent.take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                    # time.sleep(0.05)
+                                print(name_agent + ' :Transferring to level: ', level[name_agent], ' - ', level_name[name_agent][level[name_agent]])
 
-                    new_state = agent.get_state()
-                    new_depth1, thresh = agent.get_depth()
+                                if times_switch[name_agent] < len(reset_array[name_agent]):
+                                    reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
+                                else:
+                                    current_state[name_agent] = level_state[name_agent][level[name_agent]]
+                                    posit1_old = level_posit[name_agent][level[name_agent]]
+                                    reset_to_initial(level[name_agent], reset_array, client,vehicle_name=name_agent)
+                                    client.simSetVehiclePose(posit1_old, ignore_collison=True, vehicle_name=name_agent)
+                                    time.sleep(0.1)
 
-                    # Get GPS information
-                    posit = client.simGetVehiclePose()
-                    position = posit.position
-                    old_p = np.array([old_posit.position.x_val, old_posit.position.y_val])
-                    new_p = np.array([position.x_val, position.y_val])
-
-                    # calculate distance
-                    distance = distance + np.linalg.norm(new_p - old_p)
-                    old_posit = posit
-
-                    reward, crash = agent.reward_gen(new_depth1, action, crash_threshold, thresh)
-
-                    ret = ret+reward
-                    agent_state1 = agent.GetAgentState()
-
-                    if agent_state1.has_collided:
-                        num_collisions = num_collisions + 1
-                        print('crash')
-                        crash = True
-                        reward = -1
-                    data_tuple=[]
-                    data_tuple.append([current_state, action, new_state, reward, crash])
-                    err = get_errors(data_tuple, choose, ReplayMemory, algorithm_cfg.input_size, agent, target_agent, algorithm_cfg.gamma, algorithm_cfg.Q_clip)
-                    ReplayMemory.add(err, data_tuple)
-
-                    # Train if sufficient frames have been stored
-                    if iter > algorithm_cfg.wait_before_train:
-                        if iter%algorithm_cfg.train_interval==0:
-                        # Train the RL network
-                            old_states, Qvals, actions, err, idx = minibatch_double(data_tuple, algorithm_cfg.batch_size, choose, ReplayMemory, algorithm_cfg.input_size, agent, target_agent, algorithm_cfg.gamma, algorithm_cfg.Q_clip)
-
-                            for i in range(algorithm_cfg.batch_size):
-                                ReplayMemory.update(idx[i], err[i])
-
-                            if print_qval:
-                                print(Qvals)
-
-                            if choose:
-                                # Double-DQN
-                                target_agent.train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                last_crash[name_agent] = last_crash_array[name_agent][level[name_agent]]
+                                ret[name_agent] = ret_array[name_agent][level[name_agent]]
+                                distance = distance_array[name_agent][level[name_agent]]
+                                episode[name_agent] = epi_env_array[name_agent][int(level[name_agent]/3)]
+                                # environ = environ^True
                             else:
-                                agent.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
 
-                        if iter % algorithm_cfg.update_target_interval == 0:
-                            agent.take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                            print('Switching Target Network')
+                                action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon, current_state[name_agent], iter, algorithm_cfg.epsilon_saturation,algorithm_cfg.epsilon_model,  algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent[name_agent])
+
+                                action_word = translate_action(action, algorithm_cfg.num_actions)
+                                # Take the action
+                                agent[name_agent].take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
+                                # time.sleep(0.05)
+                                new_state[name_agent] = agent[name_agent].get_state()
+                                new_depth1, thresh = agent[name_agent].get_depth(cfg)
+
+
+                                # Get GPS information
+                                posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
+                                position = posit[name_agent].position
+                                old_p = np.array([old_posit[name_agent].position.x_val, old_posit[name_agent].position.y_val])
+                                new_p = np.array([position.x_val, position.y_val])
+
+                                # calculate distance
+                                distance = distance + np.linalg.norm(new_p - old_p)
+                                old_posit[name_agent] = posit[name_agent]
+
+                                reward, crash = agent[name_agent].reward_gen(new_depth1, action, crash_threshold, thresh, debug, cfg)
+
+                                ret[name_agent] = ret[name_agent]+reward
+                                agent_state = agent[name_agent].GetAgentState()
+
+                                if agent_state.has_collided:
+                                    num_collisions[name_agent] = num_collisions[name_agent] + 1
+                                    print('crash')
+                                    crash = True
+                                    reward = -1
+                                data_tuple=[]
+                                data_tuple.append([current_state[name_agent], action, new_state[name_agent], reward, crash])
+                                err = get_errors(data_tuple, choose, ReplayMemory[name_agent], algorithm_cfg.input_size, agent[name_agent], target_agent[name_agent], algorithm_cfg.gamma, algorithm_cfg.Q_clip)
+                                ReplayMemory[name_agent].add(err, data_tuple)
+                                # Train if sufficient frames have been stored
+                                if iter > algorithm_cfg.wait_before_train:
+                                    if iter%algorithm_cfg.train_interval == 0:
+                                    # Train the RL network
+                                        old_states, Qvals, actions, err, idx = minibatch_double(data_tuple, algorithm_cfg.batch_size, choose, ReplayMemory[name_agent], algorithm_cfg.input_size, agent[name_agent], target_agent[name_agent], algorithm_cfg.gamma, algorithm_cfg.Q_clip)
+
+                                        for i in range(algorithm_cfg.batch_size):
+                                            ReplayMemory[name_agent].update(idx[i], err[i])
+
+                                        if print_qval:
+                                            print(Qvals)
+
+                                        if choose:
+                                            # Double-DQN
+                                            target_agent[name_agent].train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                        else:
+                                            agent[name_agent].train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+
+
+
+
+
+
+                                # iter += 1
+
+                                time_exec = time.time()-start_time
+
+                                mem_percent = process.memory_info()[0]/2.**30
+
+                                s_log = '{:<6s} - Level {:>2d} - Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} Mem = {:<5.4f}  Reward: {:<+1.4f}  '.format(
+                                        name_agent,
+                                        int(level[name_agent]),
+                                        iter,
+                                        episode[name_agent],
+                                        action_word,
+                                        action_type,
+                                        algorithm_cfg.epsilon,
+                                        algorithm_cfg.learning_rate,
+                                        ret[name_agent],
+                                        last_crash[name_agent],
+                                        time_exec,
+                                        mem_percent,
+                                        reward)
+
+                                if iter%print_interval==0:
+                                    print(s_log)
+                                log_files[name_agent].write(s_log+'\n')
+
+                                last_crash[name_agent] = last_crash[name_agent]+1
+                                if debug:
+                                    cv2.imshow(name_agent, np.hstack((np.squeeze(current_state[name_agent], axis=0), np.squeeze(new_state[name_agent], axis =0))))
+                                    cv2.waitKey(1)
+
+                                if crash:
+                                    agent[name_agent].return_plot(ret[name_agent], episode[name_agent], int(level[name_agent]/3), mem_percent, iter, distance)
+                                    ret[name_agent] = 0
+                                    distance = 0
+                                    episode[name_agent] = episode[name_agent] + 1
+                                    last_crash[name_agent] = 0
+
+                                    reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
+                                    # time.sleep(0.2)
+                                    current_state[name_agent] = agent[name_agent].get_state()
+                                else:
+                                    current_state[name_agent] = new_state[name_agent]
+
+
+
+                                if iter % algorithm_cfg.max_iters == 0:
+                                    automate=False
+
+                                # if iter >140:
+                                #     active=False
+                        if iter % algorithm_cfg.communication_interval == 0 and iter > algorithm_cfg.wait_before_train:
+                            print('Communicating the weights and averaging them')
+                            communicate_across_agents(agent, name_agent_list, algorithm_cfg)
+                            communicate_across_agents(target_agent, name_agent_list, algorithm_cfg)
+
+                        if iter % algorithm_cfg.update_target_interval == 0 and iter > algorithm_cfg.wait_before_train:
+                            for name_agent in name_agent_list:
+                                agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
+                                print(name_agent + ' - Switching Target Network')
+                                agent[name_agent].save_network(algorithm_cfg.network_path)
+
                             choose = not choose
-                            agent.save_network(algorithm_cfg.network_path)
 
-                    iter += 1
+                        iter += 1
 
-                    time_exec = time.time()-start_time
+                    elif cfg.mode == 'infer':
+                        # Inference phase
+                        agent_state = agent[name_agent].GetAgentState()
+                        if agent_state.has_collided:
+                            print('Drone collided')
+                            print("Total distance traveled: ", np.round(distance, 2))
+                            active = False
+                            client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=1, vehicle_name=name_agent).join()
 
-                    mem_percent = process.memory_info()[0]/2.**30
+                            if nav_x: # Nav_x is empty if the drone collides in first iteration
+                                ax_nav.plot(nav_x.pop(), nav_y.pop(), 'r*', linewidth=20)
+                            file_path = env_folder + 'results/'
+                            fig_z.savefig(file_path + 'altitude_variation.png', dpi=500)
+                            fig_nav.savefig(file_path + 'navigation.png', dpi=500)
+                            close_env(env_process)
+                            print('Figures saved')
+                        else:
+                            posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
+                            distance = distance + np.linalg.norm(np.array([old_posit[name_agent].position.x_val-posit[name_agent].position.x_val,old_posit[name_agent].position.y_val-posit[name_agent].position.y_val]))
+                            # altitude[name_agent].append(-posit[name_agent].position.z_val+p_z)
+                            altitude[name_agent].append(-posit[name_agent].position.z_val-f_z)
 
-                    s_log = 'Level :{:>2d}: Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} Mem = {:<5.4f}  Reward: {:<+1.4f}  '.format(
-                            int(level),
-                            iter,
-                            episode,
-                            action_word,
-                            action_type,
-                            algorithm_cfg.epsilon,
-                            algorithm_cfg.learning_rate,
-                            ret,
-                            last_crash,
-                            time_exec,
-                            mem_percent,
-                            reward)
+                            quat = (posit[name_agent].orientation.w_val, posit[name_agent].orientation.x_val, posit[name_agent].orientation.y_val, posit[name_agent].orientation.z_val)
+                            yaw = euler_from_quaternion(quat)[2]
 
-                    print(s_log)
-                    f.write(s_log+'\n')
+                            x_val = posit[name_agent].position.x_val
+                            y_val = posit[name_agent].position.y_val
+                            z_val = posit[name_agent].position.z_val
 
-                    last_crash=last_crash+1
-                    if show_depthmap:
-                        cv2.imshow('state', np.hstack((np.squeeze(current_state, axis=0), np.squeeze(new_state, axis=0))))
-                        cv2.waitKey(1)
+                            nav_x.append(env_cfg.alpha*x_val+env_cfg.o_x)
+                            nav_y.append(env_cfg.alpha*y_val+env_cfg.o_y)
+                            nav.set_data(nav_x, nav_y)
+                            nav_text.remove()
+                            nav_text = ax_nav.text(25, 55, 'Distance: '+str(np.round(distance, 2)), style='italic',
+                                                   bbox={'facecolor': 'white', 'alpha': 0.5})
 
-                    if crash:
-                        agent.return_plot(ret, episode, int(level/3), mem_percent, iter, distance)
-                        ret = 0
-                        distance = 0
-                        episode = episode + 1
-                        last_crash = 0
+                            line_z.set_data(np.arange(len(altitude[name_agent])), altitude[name_agent])
+                            ax_z.set_xlim(0, len(altitude[name_agent]))
+                            fig_z.canvas.draw()
+                            fig_z.canvas.flush_events()
 
-                        reset_to_initial(level, reset_array, client)
-                        time.sleep(0.2)
-                        current_state = agent.get_state()
-                    else:
-                        current_state = new_state
+                            current_state[name_agent] = agent[name_agent].get_state()
+                            action, action_type, algorithm_cfg.epsilon, qvals = policy(1, current_state[name_agent], iter,
+                                                                              algorithm_cfg.epsilon_saturation, 'inference',
+                                                                              algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent[name_agent])
+                            action_word = translate_action(action, algorithm_cfg.num_actions)
+                            # Take continuous action
+                            agent[name_agent].take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
+                            old_posit[name_agent] = posit[name_agent]
 
-                    if iter%algorithm_cfg.switch_env_steps == 0:
-                        switch_env = True
-                    else:
-                        switch_env = False
+                            # Verbose and log making
+                            s_log = 'Position = ({:<3.2f},{:<3.2f}, {:<3.2f}) Orientation={:<1.3f} Predicted Action: {:<8s}  '.format(
+                                x_val, y_val, z_val, yaw, action_word
+                            )
 
-                    if iter % algorithm_cfg.max_iters == 0:
-                        automate=False
-
-                    # if iter >140:
-                    #     active=False
-                elif cfg.phase == 'infer':
-                    # Inference phase
-                    agent_state = agent.GetAgentState()
-                    if agent_state.has_collided:
-                        print('Drone collided')
-                        print("Total distance traveled: ", np.round(distance, 2))
-                        active = False
-                        client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=1).join()
-                        ax_nav.plot(nav_x.pop(), nav_y.pop(), 'r*', linewidth=20)
-                        file_path = env_folder + 'results/'
-                        fig_z.savefig(file_path + 'altitude_variation.png', dpi=500)
-                        fig_nav.savefig(file_path + 'navigation.png', dpi=500)
-                        close_env(env_process)
-                        print('Figures saved')
-                    else:
-                        posit = agent.client.simGetVehiclePose()
-                        distance = distance + np.linalg.norm(np.array([old_posit.position.x_val-posit.position.x_val,old_posit.position.y_val-posit.position.y_val]))
-                        altitude.append(-posit.position.z_val+p_z)
-
-                        quat = (posit.orientation.w_val, posit.orientation.x_val, posit.orientation.y_val, posit.orientation.z_val)
-                        yaw = euler_from_quaternion(quat)[2]
-
-                        x_val = posit.position.x_val
-                        y_val = posit.position.y_val
-                        z_val = posit.position.z_val
-
-                        nav_x.append(env_cfg.alpha*x_val+env_cfg.o_x)
-                        nav_y.append(env_cfg.alpha*y_val+env_cfg.o_y)
-                        nav.set_data(nav_x, nav_y)
-                        nav_text.remove()
-                        nav_text = ax_nav.text(25, 55, 'Distance: '+str(np.round(distance, 2)), style='italic',
-                                               bbox={'facecolor': 'white', 'alpha': 0.5})
-
-                        line_z.set_data(np.arange(len(altitude)), altitude)
-                        ax_z.set_xlim(0, len(altitude))
-                        fig_z.canvas.draw()
-                        fig_z.canvas.flush_events()
-
-                        current_state = agent.get_state()
-                        action, action_type, algorithm_cfg.epsilon, qvals = policy(1, current_state, iter,
-                                                                          algorithm_cfg.epsilon_saturation, 'inference',
-                                                                          algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent)
-                        action_word = translate_action(action, algorithm_cfg.num_actions)
-                        # Take continuous action
-                        agent.take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                        old_posit = posit
-
-                        # Verbose and log making
-                        s_log = 'Position = ({:<3.2f},{:<3.2f}, {:<3.2f}) Orientation={:<1.3f} Predicted Action: {:<8s}  '.format(
-                            x_val, y_val, z_val, yaw, action_word
-                        )
-
-                        print(s_log)
-                        f.write(s_log + '\n')
+                            print(s_log)
+                            log_files[name_agent].write(s_log + '\n')
 
 
 
-        except Exception as e:
-            print('------------- Error -------------')
-            exc_type, exc_obj, exc_tb = sys.exc_info()
-            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-            print(exc_type, fname, exc_tb.tb_lineno)
-            print(exc_obj)
-            automate = False
-            print('Hit r and then backspace to start from this point')
+            except Exception as e:
+                if str(e) == 'cannot reshape array of size 1 into shape (0,0,3)':
+                    print('Recovering from AirSim error')
+                    client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode,
+                                                             num_agents=cfg.num_agents)
+
+                    agent[name_agent].client = client
+                else:
+                    print('------------- Error -------------')
+                    exc_type, exc_obj, exc_tb = sys.exc_info()
+                    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                    print(exc_type, fname, exc_tb.tb_lineno)
+                    print(exc_obj)
+                    automate = False
+                    print('Hit r and then backspace to start from this point')
 
 

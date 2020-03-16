@@ -3,7 +3,7 @@ import os
 import tensorflow as tf
 import cv2
 from network.network import *
-import airsim
+import airsim, time
 import random
 import matplotlib.pyplot as plt
 from util.transformations import euler_from_quaternion
@@ -11,16 +11,18 @@ from PIL import Image
 from network.loss_functions import *
 from numpy import linalg as LA
 
-class DeepAgent():
-    def __init__(self, cfg, client, name):
-        print('------------------------------ ' +str(name)+ ' ------------------------------')
+class PedraAgent():
+    def __init__(self, cfg, client, name, vehicle_name):
+        half_name = name.replace(vehicle_name, '')
+        print('Initializing ', half_name)
         self.g = tf.Graph()
-        self.iter=0
+        self.iter = 0
+        self.vehicle_name = vehicle_name
         with self.g.as_default():
 
-            self.stat_writer = tf.summary.FileWriter(cfg.network_path+'return_plot')
+            self.stat_writer = tf.summary.FileWriter(cfg.network_path+'/'+self.vehicle_name +'/return_plot/')
             # name_array = 'D:/train/loss'+'/'+name
-            self.loss_writer = tf.summary.FileWriter(cfg.network_path+'loss/'+name)
+            self.loss_writer = tf.summary.FileWriter(cfg.network_path+'/'+self.vehicle_name +'/loss'+name+'/')
             self.env_type=cfg.env_type
             self.client=client
             self.input_size = cfg.input_size
@@ -38,7 +40,8 @@ class DeepAgent():
             self.target = tf.placeholder(tf.float32,    shape = [None], name='Qvals')
             self.actions= tf.placeholder(tf.int32,      shape = [None], name='Actions')
 
-            self.model = AlexNetDuel(self.X, cfg.num_actions, cfg.train_fc)
+            # self.model = AlexNetDuel(self.X, cfg.num_actions, cfg.train_fc)
+            self.model = AlexNetReduced(self.X, cfg.num_actions, cfg.train_fc)
 
             self.predict = self.model.output
             ind = tf.one_hot(self.actions, cfg.num_actions)
@@ -50,6 +53,8 @@ class DeepAgent():
             tf.global_variables_initializer().run()
             tf.local_variables_initializer().run()
             self.saver = tf.train.Saver()
+            self.all_vars = tf.trainable_variables()
+
 
             self.sess.graph.finalize()
 
@@ -60,6 +65,36 @@ class DeepAgent():
 
 
         # print()
+
+    def get_vars(self):
+        return self.sess.run(self.all_vars)
+
+    def initialize_graphs_with_average(self, agent, agent_on_same_network):
+
+        values = {}
+        var = {}
+        all_assign = {}
+        for name_agent in agent_on_same_network:
+            values[name_agent] = agent[name_agent].get_vars()
+            var[name_agent] = agent[name_agent].all_vars
+            all_assign[name_agent] = []
+
+        for i in range(len(values[name_agent])):
+            val = []
+            for name_agent in agent_on_same_network:
+                val.append(values[name_agent][i])
+            # Take mean here
+            mean_val = np.average(val, axis=0)
+            for name_agent in agent_on_same_network:
+                # all_assign[name_agent].append(tf.assign(var[name_agent][i], mean_val))
+
+                var[name_agent][i].load(mean_val, agent[name_agent].sess)
+
+        # for name_agent in agent_on_same_network:
+        #     agent[name_agent].sess.run(all_assign[name_agent])
+
+
+
 
     def Q_val(self, xs):
         target = np.zeros(shape=[xs.shape[0]], dtype=np.float32)
@@ -126,14 +161,14 @@ class DeepAgent():
 
     def take_action(self, action, num_actions, SimMode):
         # Set Paramaters
-        fov_v = 22.5 * np.pi / 180
-        fov_h = 40 * np.pi / 180
+        fov_v = (45 * np.pi / 180)/1.5
+        fov_h = (80 * np.pi / 180)/1.5
         r = 0.4
 
         ignore_collision = False
         sqrt_num_actions = np.sqrt(num_actions)
 
-        posit = self.client.simGetVehiclePose()
+        posit = self.client.simGetVehiclePose(vehicle_name=self.vehicle_name)
         pos = posit.position
         orientation = posit.orientation
 
@@ -160,9 +195,9 @@ class DeepAgent():
             z = pos.z_val + r * np.sin(theta)  # -ve because Unreal has -ve z direction going upwards
 
             self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
-                                     ignore_collison=ignore_collision)
+                                     ignore_collison=ignore_collision, vehicle_name=self.vehicle_name)
         elif SimMode == 'Multirotor':
-            r_infer = 1
+            r_infer = 0.4
             vx = r_infer * np.cos(alpha + psi)
             vy = r_infer * np.sin(alpha + psi)
             vz = r_infer * np.sin(theta)
@@ -171,22 +206,32 @@ class DeepAgent():
             self.client.moveByVelocityAsync(vx=vx, vy=vy, vz=vz, duration=1,
                                        drivetrain=airsim.DrivetrainType.MaxDegreeOfFreedom,
                                        yaw_mode=airsim.YawMode(is_rate=False,
-                                                               yaw_or_rate=180 * (alpha + psi) / np.pi))
-            # self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.01).join()
+                                                               yaw_or_rate=180 * (alpha + psi) / np.pi), vehicle_name = self.vehicle_name)
+            time.sleep(0.07)
+            self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=1, vehicle_name=self.vehicle_name)
             # print("")
             # print("Throttle:", throttle)
             # print('Yaw:', yaw)
 
             # self.client.moveByAngleThrottleAsync(pitch=-0.015, roll=0, throttle=throttle, yaw_rate=yaw, duration=0.2).join()
             # self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.005)
-    def get_depth(self):
-        responses = self.client.simGetImages([airsim.ImageRequest(2, airsim.ImageType.DepthVis, False, False)])
-        depth = []
-        img1d = np.fromstring(responses[0].image_data_uint8, dtype=np.uint8)
-        depth = img1d.reshape(responses[0].height, responses[0].width, 3)[:, :, 0]
+    def get_depth(self, cfg):
 
+        if cfg.env_type == 'indoor' or cfg.env_type == 'Indoor':
+            responses = self.client.simGetImages([airsim.ImageRequest(2, airsim.ImageType.DepthVis, False, False)],
+                                                 vehicle_name=self.vehicle_name)
+            img1d = np.fromstring(responses[0].image_data_uint8, dtype=np.uint8)
+            depth = img1d.reshape(responses[0].height, responses[0].width, 3)[:, :, 0]
+            thresh = 50
+        elif cfg.env_type == 'outdoor' or cfg.env_type == 'Outdoor':
+            responses = self.client.simGetImages([airsim.ImageRequest(1, airsim.ImageType.DepthPlanner, True)],
+                                                 vehicle_name=self.vehicle_name)
+            depth = airsim.list_to_2d_float_array(responses[0].image_data_float, responses[0].width, responses[0].height)
+            # img1d = np.asarray(responses[0].image_data_float)
+
+            # depth = img1d.reshape(responses[0].height, responses[0].width)
+            thresh = 50
         # To make sure the wall leaks in the unreal environment doesn't mess up with the reward function
-        thresh = 50
         super_threshold_indices = depth > thresh
         depth[super_threshold_indices] = thresh
         depth = depth / thresh
@@ -198,7 +243,7 @@ class DeepAgent():
     def get_state(self):
         responses1 = self.client.simGetImages([  # depth visualization image
             airsim.ImageRequest("1", airsim.ImageType.Scene, False,
-                                False)])  # scene vision image in uncompressed RGBA array
+                                False)], vehicle_name=self.vehicle_name)  # scene vision image in uncompressed RGBA array
 
         response = responses1[0]
         img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
@@ -217,7 +262,7 @@ class DeepAgent():
 
         return state_rgb
 
-    def avg_depth(self, depth_map1, thresh):
+    def avg_depth(self, depth_map1, thresh, debug, cfg):
         # Version 0.3 - NAN issue resolved
         # Thresholded depth map to ignore objects too far and give them a constant value
         # Globally (not locally as in the version 0.1) Normalise the thresholded map between 0 and 1
@@ -228,7 +273,6 @@ class DeepAgent():
         # C1=0
         # print(global_depth)
         # dynamic_window = False
-        plot_depth = True
         global_depth = np.mean(depth_map)
         n = max(global_depth * thresh / 3, 1)
         # print("n=", n)
@@ -276,7 +320,7 @@ class DeepAgent():
             end_ind = int(np.round(fract_min * len(C_sort)))
             C1 = np.mean(C_sort[0:end_ind])
 
-        if plot_depth:
+        if debug:
             cv2.rectangle(depth_map1, (y_start_center, x_start), (y_start_right, x_end), (0, 0, 0), 3)
             cv2.rectangle(depth_map1, (y_start_left, x_start), (y_start_center, x_end), (0, 0, 0), 3)
             cv2.rectangle(depth_map1, (y_start_right, x_start), (y_end_right, x_end), (0, 0, 0), 3)
@@ -289,15 +333,12 @@ class DeepAgent():
             cv2.putText(depth_map1, dispR, (int(W - 80), 70), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 0), thickness=2)
             cmap = plt.get_cmap('jet')
             #
+
             depth_map_heat = cmap(depth_map1)
             cv2.imshow('Depth Map', depth_map_heat)
             cv2.waitKey(1)
 
-        # print(L1, C1, R1)
         return L1, C1, R1
-
-
-
 
     def avg_depth_old(self, depth_map1, thresh):
         # Version 0.2
@@ -391,8 +432,8 @@ class DeepAgent():
 
 
 
-    def reward_gen(self, d_new, action, crash_threshold, thresh):
-        L_new, C_new, R_new = self.avg_depth(d_new, thresh)
+    def reward_gen(self, d_new, action, crash_threshold, thresh, debug, cfg):
+        L_new, C_new, R_new = self.avg_depth(d_new, thresh, debug, cfg)
         # print('Rew_C', C_new)
         # print(L_new, C_new, R_new)
         # For now, lets keep the reward a simple one
@@ -413,11 +454,12 @@ class DeepAgent():
         return reward, done
 
     def GetAgentState(self):
-        return self.client.simGetCollisionInfo()
+        return self.client.simGetCollisionInfo(vehicle_name=self.vehicle_name)
 
     def return_plot(self, ret, epi, env_type, mem_percent, iter, dist):
         # ret, episode, int(level/4), mem_percent, iter
         summary = tf.Summary()
+        # tag = self.vehicle_name + '_Return'
         tag = 'Return'
         summary.value.add(tag=tag, simple_value=ret)
         self.stat_writer.add_summary(summary, epi)
@@ -427,28 +469,29 @@ class DeepAgent():
         self.stat_writer.add_summary(summary, iter)
 
         summary = tf.Summary()
-        summary.value.add(tag='Safe Flight', simple_value=dist)
+        # summary.value.add(tag=self.vehicle_name + '_Safe Flight', simple_value=dist)
+        summary.value.add(tag = 'Safe Flight', simple_value=dist)
         self.stat_writer.add_summary(summary, epi)
 
     def save_network(self, save_path):
         self.saver.save(self.sess, save_path)
 
-    def save_weights(self, save_path):
-        name = ['conv1W', 'conv1b', 'conv2W', 'conv2b', 'conv3W', 'conv3b', 'conv4W', 'conv4b', 'conv5W', 'conv5b',
-                'fc6aW', 'fc6ab', 'fc7aW', 'fc7ab', 'fc8aW', 'fc8ab', 'fc9aW', 'fc9ab', 'fc10aW', 'fc10ab',
-                'fc6vW', 'fc6vb', 'fc7vW', 'fc7vb', 'fc8vW', 'fc8vb', 'fc9vW', 'fc9vb', 'fc10vW', 'fc10vb'
-                ]
-        weights = {}
-        print('Saving weights in .npy format')
-        for i in range(0, 30):
-            # weights[name[i]] = self.sess.run(self.sess.graph._collections['variables'][i])
-            if i == 0:
-                str1 = 'Variable:0'
-            else:
-                str1 = 'Variable_'+str(i)+':0'
-            weights[name[i]] = self.sess.run(str1)
-        save_path = save_path+'weights.npy'
-        np.save(save_path, weights)
+    # def save_weights(self, save_path):
+    #     name = ['conv1W', 'conv1b', 'conv2W', 'conv2b', 'conv3W', 'conv3b', 'conv4W', 'conv4b', 'conv5W', 'conv5b',
+    #             'fc6aW', 'fc6ab', 'fc7aW', 'fc7ab', 'fc8aW', 'fc8ab', 'fc9aW', 'fc9ab', 'fc10aW', 'fc10ab',
+    #             'fc6vW', 'fc6vb', 'fc7vW', 'fc7vb', 'fc8vW', 'fc8vb', 'fc9vW', 'fc9vb', 'fc10vW', 'fc10vb'
+    #             ]
+    #     weights = {}
+    #     print('Saving weights in .npy format')
+    #     for i in range(0, 30):
+    #         # weights[name[i]] = self.sess.run(self.sess.graph._collections['variables'][i])
+    #         if i == 0:
+    #             str1 = 'Variable:0'
+    #         else:
+    #             str1 = 'Variable_'+str(i)+':0'
+    #         weights[name[i]] = self.sess.run(str1)
+    #     save_path = save_path+'weights.npy'
+    #     np.save(save_path, weights)
 
     def load_network(self, load_path):
         self.saver.restore(self.sess, load_path)
