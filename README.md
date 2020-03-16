@@ -1,5 +1,14 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA-2.0)
-The tutorial/guidlines to PEDRA is divided into 4 reamde files
+
+## Updates in version 2.0:
+1. Support of multi-drone environments.
+2. Support of Outdoor Environment.
+3. Improved and generalized code structure.
+4. Better and detailed documentation
+
+It is recommended to use version 2.0 of PEDRA due to improved stability. If you still want to use PEDRA 1.0 it can be downloaded from [here](https://github.com/aqeelanwar/PEDRA/tree/PEDRA-v1)
+
+The tutorial/guidelines to PEDRA is divided into 4 reamde files
 1. Main readme file (this one)
 2. [Environments readme file](/unreal_envs/readme.md)
 3. [Algorithms readme file](/algorithms/readme.md)
