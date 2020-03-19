@@ -1,7 +1,7 @@
 # PEDRA - Environments
 
 <p align="center">
-<img src="/images/envs.png">
+<img src="images/envs.png">
 </p>
 
 
