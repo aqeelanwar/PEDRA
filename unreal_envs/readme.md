@@ -102,11 +102,11 @@ There are three kind of coordinates in which the drone position can be expressed
 3. Image based coordinates: The coordinates of the drone in the floorplan image. It is a mapping of the actual drone coordinates onto the image map.
 
 <p align="center">
-<img src="/images/coordinate_conversion.png">
+<img src="../images/coordinate_conversion.png">
 </p>
 
 <p align="center">
-<img width = 600 src="/images/coordinate_conversion_params.png">
+<img width = 600 src="../images/coordinate_conversion_params.png">
 </p>
 
 Within PEDRA, we always use the PEDRA coordinates to deal with drone positions with an exception being the environments/initial_positions.py file. In this file the drone coordinates are expressed in the physical coordinates.
@@ -126,7 +126,7 @@ This can be done by setting the config.cfg file to move_around mode. In this mod
 
 
 <p align="center">
-<img src="/images/print_position.PNG">
+<img src="../images/print_position.PNG">
 </p>
 
 
@@ -151,5 +151,5 @@ Running this will open the directory for the user to select the floorplan of the
 In order to use these coordinates in the initial_positions.py file, make sure you use the physical coordinates.
 
 <p align="center">
-<img src="/images/retrieve_initial_positions.gif">
+<img src="../images/retrieve_initial_positions.gif">
 </p>
