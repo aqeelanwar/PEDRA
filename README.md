@@ -149,7 +149,7 @@ This config file is used to set high-level simulation parameters. The complete l
 
 #### Camera Parameters [camera_params]:
 
-<center>
+
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
@@ -157,7 +157,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | height      	    | Height of the camera frame                    	                                    | Any integer > 0                   |
 | fov_degrees 	    | Camera field of view in degrees                                                   | Any value >0                    	|
 
-</center>
+
 
 ### Algorithm-specific configurations:
 ```

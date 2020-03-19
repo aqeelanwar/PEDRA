@@ -53,7 +53,7 @@ A .png image file of the floorplan of the environment. This can come in handy wh
 ### Config file
 Each environment comes with a config file. This config file includes the parameters used to set the environment up. Following is the list of parameters in this config file and its explanation. This config file __should not be edited__.
 
-<center>
+
 
 | Parameter        	| Explanation                                                        |
 |------------------	|--------------------------------------------------------------------|
@@ -66,7 +66,7 @@ Each environment comes with a config file. This config file includes the paramet
 |floor_z:            |Height of the floor in physical coordinates |
 |player_start_z:     |Height of the origin (player start) in physical coordinates |
 
-</center>
+
 
 The image coordinates, PEDRA coordinates and physical coordinates are explained below. In case of an outdoor environment, the value of ceiling_z is set to 10000 meaning that there is no ceiling.
 
@@ -75,7 +75,7 @@ The image coordinates, PEDRA coordinates and physical coordinates are explained 
 ## Environment Supported Features:
 While the simulation screen is on, following keys can be used to interact with it.
 
-<center>
+
 
 | Key        	      | Feature                                                           |Category      |
 |------------------	|-------------------------------------------------------------------|--------------|
@@ -86,7 +86,7 @@ While the simulation screen is on, following keys can be used to interact with i
 | 2         	      | Toggle segmentation map as subwindow                              |AirSim        |
 | 3         	      | Toggle image from front facing camera as subwindow                |AirSim        |
 
-</center>
+
 
 <p align="center">
 <img src="/images/pedra_help.gif">

@@ -21,7 +21,7 @@ Value based deep Q learning method for autonomous navigation. The input to the D
 
 ## Simulation Parameters [simulation_params]:
 
-<center>
+
 
 | Parameter      	| Explanation                                           	| Possible values           	|
 |----------------	|-------------------------------------------------------	|---------------------------	|
@@ -29,11 +29,11 @@ Value based deep Q learning method for autonomous navigation. The input to the D
 | load_data_path 	| The path to load the data from into the replay memory 	| Relative path to the data 	|
 | distributed_algo| Select from one of the available distributed learning algorithms 	| GlobalLearningGlobalUpdate, LocalLearningGlobalUpdate, LocalLearningLocalUpdate 	|
 
-</center>
+
 
 ## Reinforcement Learning training parameters [RL_params]:
 
-<center>
+
 
 | Parameter              	| Explanation                                                                                     	| Possible values          	|
 |------------------------	|-------------------------------------------------------------------------------------------------	|--------------------------	|
@@ -57,7 +57,7 @@ Value based deep Q learning method for autonomous navigation. The input to the D
 | communication_interval          	| How often do the drones communication, num of iterations per communication                 	| Any integer value >0     	|
 | average_connectivity          	| Each drone is on average connected to how many drones| num_agent > integer > 0|
 
-</center>
+
 
 ## Running PEDRA for DeepQLearning:
 Following steps need to be taken to run PEDRA for DeepQLearning
