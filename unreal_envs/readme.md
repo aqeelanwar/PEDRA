@@ -1,11 +1,11 @@
 # PEDRA - Environments
 
 <p align="center">
-<img src="images/envs.png">
+<img src="../images/envs.png">
 </p>
 
 
-PEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. The environments fall into two categories.
+ooooPEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. The environments fall into two categories.
 
 * Indoor Environments:
   * Indoor Long Environment
