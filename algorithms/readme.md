@@ -159,15 +159,16 @@ The simulation generates algorithmic log files as txt files which can be viewed 
 #### Train Log:
 Example train log generated can be seen below
 
-![train log](../images/trainlog.PNG)
+<p align="center">
+<img width = "1000" src="../images/trainlog.PNG">
+</p>
 
 #### Infer Log:
 Example infer log generated can be seen below
 
-<!-- <p align="center">
-<img width = 500 src="../images/inferlog.PNG">
-</p> -->
-![infer log](../images/inferlog.PNG)
+<p align="center">
+<img width = "500" src="../images/inferlog.PNG">
+</p>
 
 
 2. Network weights
