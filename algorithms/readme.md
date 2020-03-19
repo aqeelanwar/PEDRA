@@ -169,6 +169,3 @@ Example infer log generated can be seen below
 <p align="center">
 <img width = "500" src="../images/inferlog.PNG">
 </p>
-
-
-2. Network weights
