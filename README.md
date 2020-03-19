@@ -128,7 +128,7 @@ This config file is used to set high-level simulation parameters. The complete l
 
 #### General Parameters [general_params]:
 
-<center>
+
 
 | Parameter        	| Explanation                                                                       	| Possible values                  	|
 |------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
@@ -145,7 +145,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
 | num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
 
-</center>
+
 
 #### Camera Parameters [camera_params]:
 
