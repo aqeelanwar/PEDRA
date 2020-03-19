@@ -16,7 +16,7 @@ Value based deep Q learning method for autonomous navigation. The input to the D
 
 
 ## Block Diagram
-![Cover Photo](/images/block_diag.png)
+![Cover Photo](../images/block_diag.png)
 
 
 ## Simulation Parameters [simulation_params]:
@@ -87,7 +87,7 @@ Modify the DeepQLearning file to reflect the algorithm related parameters explai
 ### 2. Modify the agent (Optional):
 A PEDRA agent is a combination of network, drone and reinforcement learning functions. The figure below shows the available functions.
 
-![pedra_agent](/images/pedra_agent.png)
+![pedra_agent](../images/pedra_agent.png)
 
 Users can modify these functions (or add new ones) according to their requirements if need be.
 
@@ -106,7 +106,7 @@ DRL is notorious to be data hungry. For complex tasks such as drone autonomous n
 3. Hit the ‘L’ key. This will load the updated parameters and will print it on the terminal.
 4. Hit the ‘backspace’ key to resume the simulation.
 
-![pygame_control](/images/train_keys.PNG)
+![pygame_control](../images/train_keys.PNG)
 
 More functionalities can be added by editing the aux_function.py file for the module check_user_input
 
@@ -141,7 +141,7 @@ tensorboard --logdir e2e                         # Example
 ```
 
 The terminal will display the local URL that can be opened up on any browser, and the tensorboard display will appear plotting the DRL parameters on run-time.
-![tensorboard](/images/tf.png)
+![tensorboard](../images/tf.png)
 
 ### b. Log files:
 The simulation generates algorithmic log files as txt files which can be viewed for troubleshooting. This log file is saved at the following path
@@ -159,13 +159,13 @@ The simulation generates algorithmic log files as txt files which can be viewed 
 #### Train Log:
 Example train log generated can be seen below
 <p align="center">
-<img width = 1000 src="/images/trainlog.PNG">
+<img width = 1000 src="../images/trainlog.PNG">
 </p>
 
 #### Infer Log:
 Example infer log generated can be seen below
 <p align="center">
-<img width = 500 src="/images/inferlog.PNG">
+<img width = 500 src="../images/inferlog.PNG">
 </p>
 
 
