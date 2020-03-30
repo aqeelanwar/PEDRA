@@ -10,7 +10,9 @@ import airsim
 import pygame
 from configs.read_cfg import read_cfg
 import matplotlib.pyplot as plt
-
+from PIL import Image
+import cv2
+from skimage.util import random_noise
 
 def close_env(env_process):
     process = psutil.Process(env_process.pid)
@@ -23,9 +25,9 @@ def save_network_path(cfg, algorithm_cfg):
     # Save the network to the directory network_path
     weights_type = 'Imagenet'
     if algorithm_cfg.custom_load == True:
-        algorithm_cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + 'CustomLoad/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
+        algorithm_cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + 'CustomLoad/' + algorithm_cfg.train_type + '/'
     else:
-        algorithm_cfg.network_path = 'models/trained/' + '/' + cfg.env_type + '/' + cfg.env_name + '/' + weights_type + '/' + algorithm_cfg.train_type + '/' + algorithm_cfg.train_type
+        algorithm_cfg.network_path = 'models/trained/' + cfg.env_type + '/' + cfg.env_name + '/' + weights_type + '/' + algorithm_cfg.train_type + '/'
 
     if not os.path.exists(algorithm_cfg.network_path):
         os.makedirs(algorithm_cfg.network_path)
@@ -257,6 +259,47 @@ def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1):
 
     return client, old_posit, initZ
 
+def get_image(client, vehicle_name, camera_type, first_frame, last_frame):
+    responses1 = client.simGetImages([  # depth visualization image
+        airsim.ImageRequest("1", airsim.ImageType.Scene, False,
+                            False)], vehicle_name=vehicle_name)  # scene vision image in uncompressed RGBA array
+
+    response = responses1[0]
+    img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
+    img_rgba = img1d.reshape(response.height, response.width, 3)
+    img = Image.fromarray(img_rgba)
+    img_rgb = img.convert('RGB')
+    camera_image_rgb = np.asarray(img_rgb)
+
+    if camera_type == 'optical':
+        camera_image = camera_image_rgb
+
+    if camera_type == 'DVS':
+        # camera_image = cv2.normalize(camera_image_rgb, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        frame1 = cv2.cvtColor(camera_image_rgb, cv2.COLOR_BGR2GRAY)
+        # frame23 = cv2.normalize(frame1, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        frame = np.uint8(np.log1p(frame1))
+        frame = cv2.normalize(frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+
+        if first_frame:
+            camera_image = frame
+            first_frame = False
+        else:
+            camera_image = frame - last_frame
+        # ret, thresh1 = cv2.threshold(display_frame, 0.2, 0.8, cv2.THRESH_BINARY)
+        # display_frame1 = cv2.bitwise_and(display_frame, thresh1)
+        last_frame = frame
+
+        camera_image = random_noise(camera_image, mode='s&p', amount=0.005)
+        camera_image = cv2.cvtColor(camera_image, cv2.COLOR_GRAY2BGR)
+
+        cv2.imshow('rgb', camera_image_rgb)
+        cv2.imshow('dvs', camera_image)
+        cc=1
+
+    return camera_image, first_frame, last_frame
+
+
 def blit_text(surface, text, pos, font, color=pygame.Color('black')):
     words = [word.split(' ') for word in text.splitlines()]  # 2D array where each row is a list of words.
     space = font.size(' ')[0]  # The width of a space.
@@ -324,7 +367,6 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                 # agent.save_network(iter, save_path, ' ')
                 agent.save_network(algorithm_cfg.network_path)
                 # agent.save_data(iter, data_tuple, tuple_path)
-                print('Model Saved: ', algorithm_cfg.network_path)
 
 
             if event.key == pygame.K_BACKSPACE:

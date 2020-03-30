@@ -10,6 +10,7 @@ from util.transformations import euler_from_quaternion
 from PIL import Image
 from network.loss_functions import *
 from numpy import linalg as LA
+from aux_functions import get_image
 
 class PedraAgent():
     def __init__(self, cfg, client, name, vehicle_name):
@@ -18,11 +19,14 @@ class PedraAgent():
         self.g = tf.Graph()
         self.iter = 0
         self.vehicle_name = vehicle_name
+        self.first_frame=True
+        self.last_frame = []
         with self.g.as_default():
-
-            self.stat_writer = tf.summary.FileWriter(cfg.network_path+'/'+self.vehicle_name +'/return_plot/')
+            stat_writer_path = cfg.network_path+self.vehicle_name +'/return_plot/'
+            loss_writer_path = cfg.network_path+self.vehicle_name +'/loss'+name+'/'
+            self.stat_writer = tf.summary.FileWriter(stat_writer_path)
             # name_array = 'D:/train/loss'+'/'+name
-            self.loss_writer = tf.summary.FileWriter(cfg.network_path+'/'+self.vehicle_name +'/loss'+name+'/')
+            self.loss_writer = tf.summary.FileWriter(loss_writer_path)
             self.env_type=cfg.env_type
             self.client=client
             self.input_size = cfg.input_size
@@ -241,19 +245,23 @@ class PedraAgent():
         return depth, thresh
 
     def get_state(self):
-        responses1 = self.client.simGetImages([  # depth visualization image
-            airsim.ImageRequest("1", airsim.ImageType.Scene, False,
-                                False)], vehicle_name=self.vehicle_name)  # scene vision image in uncompressed RGBA array
+        # responses1 = self.client.simGetImages([  # depth visualization image
+        #     airsim.ImageRequest("1", airsim.ImageType.Scene, False,
+        #                         False)], vehicle_name=self.vehicle_name)  # scene vision image in uncompressed RGBA array
+        #
+        # response = responses1[0]
+        # img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
+        # img_rgba = img1d.reshape(response.height, response.width, 3)
+        # img = Image.fromarray(img_rgba)
+        # img_rgb = img.convert('RGB')
+        #
+        # state = np.asarray(img_rgb)
 
-        response = responses1[0]
-        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
-        img_rgba = img1d.reshape(response.height, response.width, 3)
-        img = Image.fromarray(img_rgba)
-        img_rgb = img.convert('RGB')
-        self.iter = self.iter+1
-        state = np.asarray(img_rgb)
+        camera_image, self.first_frame, self.last_frame = get_image(client=self.client, vehicle_name=self.vehicle_name,
+                                 camera_type='optical', first_frame=self.first_frame, last_frame=self.last_frame)
 
-        state = cv2.resize(state, (self.input_size, self.input_size), cv2.INTER_LINEAR)
+        self.iter = self.iter + 1
+        state = cv2.resize(camera_image, (self.input_size, self.input_size), cv2.INTER_LINEAR)
         state = cv2.normalize(state, state, 0, 1, cv2.NORM_MINMAX, cv2.CV_32F)
         state_rgb = []
         state_rgb.append(state[:, :, 0:3])
@@ -474,7 +482,10 @@ class PedraAgent():
         self.stat_writer.add_summary(summary, epi)
 
     def save_network(self, save_path):
+        save_path = save_path + self.vehicle_name + '/'+self.vehicle_name
         self.saver.save(self.sess, save_path)
+
+        print('Model Saved: ', save_path)
 
     # def save_weights(self, save_path):
     #     name = ['conv1W', 'conv1b', 'conv2W', 'conv2b', 'conv3W', 'conv3b', 'conv4W', 'conv4b', 'conv5W', 'conv5b',
