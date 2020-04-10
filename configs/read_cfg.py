@@ -19,6 +19,13 @@ def ConvertIfStringIsInt(input_string):
             return float(input_string)
 
     except ValueError:
+        true_array = ['True', 'TRUE', 'true', 'Yes', 'YES', 'yes']
+        false_array = ['False', 'FALSE', 'false', 'No', 'NO', 'no']
+        if input_string in true_array:
+            input_string = True
+        elif input_string in false_array:
+            input_string = False
+
         return input_string
 
 
