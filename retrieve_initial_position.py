@@ -4,7 +4,7 @@
 
 import matplotlib.pyplot as plt
 from configs.read_cfg import read_cfg
-from environments.initial_positions import *
+from unreal_envs.initial_positions import *
 
 from tkinter import filedialog
 from tkinter import *

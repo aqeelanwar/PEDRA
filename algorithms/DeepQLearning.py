@@ -8,8 +8,10 @@ from unreal_envs.initial_positions import *
 from os import getpid
 from network.Memory import Memory
 from aux_functions import *
-import os, json
+import os
 from util.transformations import euler_from_quaternion
+from configs.read_cfg import read_cfg, update_algorithm_cfg
+
 
 def DeepQLearning(cfg):
     if cfg.mode == 'move_around':
@@ -17,7 +19,8 @@ def DeepQLearning(cfg):
     else:
         algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
 
-        if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate' or cfg.mode == 'infer':
+        if 'GlobalLearningGlobalUpdate-SA' in algorithm_cfg.distributed_algo or cfg.mode == 'infer':
+            # algorithm_cfg = update_algorithm_cfg(algorithm_cfg, cfg)
             cfg.num_agents = 1
 
         # Start the environment
@@ -48,13 +51,24 @@ def DeepQLearning(cfg):
         if cfg.mode == 'train':
             ReplayMemory = {}
             target_agent = {}
+
+            if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
+                print_orderly('global', 40)
+                # Multiple agent acts as data collecter and one global learner
+                global_agent = PedraAgent(algorithm_cfg, client, name='DQN', vehicle_name='global')
+                ReplayMemory = Memory(algorithm_cfg.buffer_len)
+                target_agent = PedraAgent(algorithm_cfg, client, name='Target', vehicle_name='global')
+
             for drone in range(cfg.num_agents):
                 name_agent = "drone" + str(drone)
                 name_agent_list.append(name_agent)
                 print_orderly(name_agent, 40)
-                ReplayMemory[name_agent] = Memory(algorithm_cfg.buffer_len)
-                agent[name_agent] = PedraAgent(algorithm_cfg, client, name = 'DQN', vehicle_name = name_agent)
-                target_agent[name_agent] = PedraAgent(algorithm_cfg, client, name= 'Target', vehicle_name = name_agent)
+                # TODO: turn the neural network off if global agent is present
+                agent[name_agent] = PedraAgent(algorithm_cfg, client, name='DQN', vehicle_name=name_agent)
+
+                if algorithm_cfg.distributed_algo != 'GlobalLearningGlobalUpdate-MA':
+                    ReplayMemory[name_agent] = Memory(algorithm_cfg.buffer_len)
+                    target_agent[name_agent] = PedraAgent(algorithm_cfg, client, name= 'Target', vehicle_name = name_agent)
                 current_state[name_agent] = agent[name_agent].get_state()
 
         elif cfg.mode == 'infer':
@@ -69,6 +83,10 @@ def DeepQLearning(cfg):
             altitude[name_agent] = []
             p_z,f_z, fig_z, ax_z, line_z, fig_nav, ax_nav, nav = initialize_infer(env_cfg=env_cfg, client=client, env_folder=env_folder)
             nav_text = ax_nav.text(0, 0, '')
+
+            # Select initial position
+            reset_to_initial(0, reset_array, client, vehicle_name=name_agent)
+            old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
 
         # Initialize variables
         iter = 1
@@ -175,8 +193,17 @@ def DeepQLearning(cfg):
                                 episode[name_agent] = epi_env_array[name_agent][int(level[name_agent]/3)]
                                 # environ = environ^True
                             else:
+                                # TODO: policy from one global agent: DONE
+                                if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
+                                    agent_this_drone = global_agent
+                                    ReplayMemory_this_drone = ReplayMemory
+                                    target_agent_this_drone = target_agent
+                                else:
+                                    agent_this_drone = agent[name_agent]
+                                    ReplayMemory_this_drone = ReplayMemory[name_agent]
+                                    target_agent_this_drone = target_agent[name_agent]
 
-                                action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon, current_state[name_agent], iter, algorithm_cfg.epsilon_saturation,algorithm_cfg.epsilon_model,  algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent[name_agent])
+                                action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon, current_state[name_agent], iter, algorithm_cfg.epsilon_saturation,algorithm_cfg.epsilon_model,  algorithm_cfg.wait_before_train, algorithm_cfg.num_actions, agent_this_drone)
 
                                 action_word = translate_action(action, algorithm_cfg.num_actions)
                                 # Take the action
@@ -208,25 +235,28 @@ def DeepQLearning(cfg):
                                     reward = -1
                                 data_tuple=[]
                                 data_tuple.append([current_state[name_agent], action, new_state[name_agent], reward, crash])
-                                err = get_errors(data_tuple, choose, ReplayMemory[name_agent], algorithm_cfg.input_size, agent[name_agent], target_agent[name_agent], algorithm_cfg.gamma, algorithm_cfg.Q_clip)
-                                ReplayMemory[name_agent].add(err, data_tuple)
+                                # TODO: one replay memory global, target_agent, agent: DONE
+                                err = get_errors(data_tuple, choose, ReplayMemory_this_drone, algorithm_cfg.input_size, agent_this_drone, target_agent_this_drone, algorithm_cfg.gamma, algorithm_cfg.Q_clip)
+                                ReplayMemory_this_drone.add(err, data_tuple)
+
                                 # Train if sufficient frames have been stored
                                 if iter > algorithm_cfg.wait_before_train:
                                     if iter%algorithm_cfg.train_interval == 0:
                                     # Train the RL network
-                                        old_states, Qvals, actions, err, idx = minibatch_double(data_tuple, algorithm_cfg.batch_size, choose, ReplayMemory[name_agent], algorithm_cfg.input_size, agent[name_agent], target_agent[name_agent], algorithm_cfg.gamma, algorithm_cfg.Q_clip)
-
+                                    # TODO global replay memory, agent, target_agent: DONE
+                                        old_states, Qvals, actions, err, idx = minibatch_double(data_tuple, algorithm_cfg.batch_size, choose, ReplayMemory_this_drone, algorithm_cfg.input_size, agent_this_drone, target_agent_this_drone, algorithm_cfg.gamma, algorithm_cfg.Q_clip)
+                                    # TODO global replay memory: DONE
                                         for i in range(algorithm_cfg.batch_size):
-                                            ReplayMemory[name_agent].update(idx[i], err[i])
+                                            ReplayMemory_this_drone.update(idx[i], err[i])
 
                                         if print_qval:
                                             print(Qvals)
-
+                                        # TODO global agent, target_agent: DONE
                                         if choose:
                                             # Double-DQN
-                                            target_agent[name_agent].train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                            target_agent_this_drone.train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
                                         else:
-                                            agent[name_agent].train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                            agent_this_drone.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
 
 
 
@@ -283,18 +313,25 @@ def DeepQLearning(cfg):
 
                                 # if iter >140:
                                 #     active=False
+
+                        # TODO define and state agents
+                        if iter % algorithm_cfg.update_target_interval == 0 and iter > algorithm_cfg.wait_before_train:
+
+                            if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
+                                print('global' + ' - Switching Target Network')
+                                global_agent.save_network(algorithm_cfg.network_path, episode[name_agent])
+                            else:
+                                for name_agent in name_agent_list:
+                                    agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
+                                    print(name_agent + ' - Switching Target Network')
+                                    agent[name_agent].save_network(algorithm_cfg.network_path, episode[name_agent])
+
+                            choose = not choose
+
                         if iter % algorithm_cfg.communication_interval == 0 and iter > algorithm_cfg.wait_before_train:
                             print('Communicating the weights and averaging them')
                             communicate_across_agents(agent, name_agent_list, algorithm_cfg)
                             communicate_across_agents(target_agent, name_agent_list, algorithm_cfg)
-
-                        if iter % algorithm_cfg.update_target_interval == 0 and iter > algorithm_cfg.wait_before_train:
-                            for name_agent in name_agent_list:
-                                agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                                print(name_agent + ' - Switching Target Network')
-                                agent[name_agent].save_network(algorithm_cfg.network_path)
-
-                            choose = not choose
 
                         iter += 1
 

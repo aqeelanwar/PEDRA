@@ -38,7 +38,7 @@ def save_network_path(cfg, algorithm_cfg):
 def communicate_across_agents(agent, name_agent_list, algorithm_cfg):
     name_agent = name_agent_list[0]
     update_done = False
-    if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate':
+    if 'GlobalLearningGlobalUpdate' in algorithm_cfg.distributed_algo:
         # No need to do anything
         update_done = True
 
@@ -365,7 +365,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                 automate = False
                 print('Saving Model')
                 # agent.save_network(iter, save_path, ' ')
-                agent.save_network(algorithm_cfg.network_path)
+                agent.save_network(algorithm_cfg.network_path, episode='user')
                 # agent.save_data(iter, data_tuple, tuple_path)
 
 

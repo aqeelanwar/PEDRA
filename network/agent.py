@@ -45,7 +45,7 @@ class PedraAgent():
             self.actions= tf.placeholder(tf.int32,      shape = [None], name='Actions')
 
             # self.model = AlexNetDuel(self.X, cfg.num_actions, cfg.train_fc)
-            self.model = AlexNetReduced(self.X, cfg.num_actions, cfg.train_fc)
+            self.model = C3F2(self.X, cfg.num_actions, cfg.train_fc)
 
             self.predict = self.model.output
             ind = tf.one_hot(self.actions, cfg.num_actions)
@@ -481,8 +481,8 @@ class PedraAgent():
         summary.value.add(tag = 'Safe Flight', simple_value=dist)
         self.stat_writer.add_summary(summary, epi)
 
-    def save_network(self, save_path):
-        save_path = save_path + self.vehicle_name + '/'+self.vehicle_name
+    def save_network(self, save_path, episode=''):
+        save_path = save_path + self.vehicle_name + '/'+self.vehicle_name +'_'+str(episode)
         self.saver.save(self.sess, save_path)
 
         print('Model Saved: ', save_path)
