@@ -19,6 +19,13 @@ def ConvertIfStringIsInt(input_string):
             return float(input_string)
 
     except ValueError:
+        true_array = ['True', 'TRUE', 'true', 'Yes', 'YES', 'yes']
+        false_array = ['False', 'FALSE', 'false', 'No', 'NO', 'no']
+        if input_string in true_array:
+            input_string = True
+        elif input_string in false_array:
+            input_string = False
+
         return input_string
 
 
@@ -43,3 +50,13 @@ def read_cfg(config_filename='configs/main.cfg', verbose=False):
                 print(name + ':' + spaces + str(cfg[name]))
 
     return cfg
+
+def update_algorithm_cfg(algorithm_cfg, cfg):
+    if algorithm_cfg.distributed_algo=='GlobalLearningGlobalUpdate-MA':
+        algorithm_cfg.wait_before_train = algorithm_cfg.wait_before_train*cfg.num_agents
+        algorithm_cfg.max_iters = algorithm_cfg.max_iters * cfg.num_agents
+        algorithm_cfg.buffer_len = algorithm_cfg.buffer_len * cfg.num_agents
+        algorithm_cfg.epsilon_saturation = algorithm_cfg.epsilon_saturation*cfg.num_agents
+        algorithm_cfg.update_target_interval = algorithm_cfg.update_target_interval*cfg.num_agents
+
+    return algorithm_cfg

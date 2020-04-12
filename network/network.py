@@ -43,14 +43,14 @@ class AlexNetDuel(object):
         self.flat = tf.contrib.layers.flatten(self.maxpool5)
 
         # Advantage Network
-        self.fc6_a = self.FullyConnected(self.flat,     units_in=9216, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc6_a = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
         self.fc7_a = self.FullyConnected(self.fc6_a,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
         self.fc8_a = self.FullyConnected(self.fc7_a,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
         self.fc9_a = self.FullyConnected(self.fc8_a,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
         self.fc10_a = self.FullyConnected(self.fc9_a,   units_in=512,  units_out=num_actions, act='linear', trainable=True)
 
         # Value Network
-        self.fc6_v = self.FullyConnected(self.flat,     units_in=9216, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc6_v = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
         self.fc7_v = self.FullyConnected(self.fc6_v,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
         self.fc8_v = self.FullyConnected(self.fc7_v,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
         self.fc9_v = self.FullyConnected(self.fc8_v,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
@@ -80,7 +80,7 @@ class AlexNetDuel(object):
         else:
             assert (1 == 0)
 
-class AlexNetReduced(object):
+class C3F2(object):
 
     def __init__(self, x, num_actions, train_type):
         self.x = x
@@ -109,15 +109,15 @@ class AlexNetReduced(object):
         self.conv1 = self.conv(self.x, k=7, out=96, s=4, p="VALID",trainable=train_conv)
         self.maxpool1 = tf.nn.max_pool(self.conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
 
-        self.conv2 = self.conv(self.maxpool1, k=5, out=256, s=1, p="VALID",trainable=train_conv)
+        self.conv2 = self.conv(self.maxpool1, k=5, out=64, s=1, p="VALID",trainable=train_conv)
         self.maxpool2 = tf.nn.max_pool(self.conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
 
-        self.conv3 = self.conv(self.maxpool2, k=3, out=256, s=1, p="SAME",trainable=train_conv)
+        self.conv3 = self.conv(self.maxpool2, k=3, out=64, s=1, p="SAME",trainable=train_conv)
 
         self.flat = tf.contrib.layers.flatten(self.conv3)
 
         # Advantage Network
-        self.fc1 = self.FullyConnected(self.flat,     units_in=4096, units_out=1024, act='relu', trainable=train_fc6)
+        self.fc1 = self.FullyConnected(self.flat,     units_in=1024, units_out=1024, act='relu', trainable=train_fc6)
         self.fc2 = self.FullyConnected(self.fc1,    units_in=1024, units_out=num_actions, act='linear', trainable=train_fc7)
 
         self.output = self.fc2

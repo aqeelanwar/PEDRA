@@ -2,6 +2,7 @@
 # Created: 10/14/2019, 12:50 PM
 # Email: aqeel.anwar@gatech.edu
 import numpy as np
+import nvidia_smi
 import os, subprocess, psutil
 import math
 import random
@@ -38,7 +39,7 @@ def save_network_path(cfg, algorithm_cfg):
 def communicate_across_agents(agent, name_agent_list, algorithm_cfg):
     name_agent = name_agent_list[0]
     update_done = False
-    if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate':
+    if 'GlobalLearningGlobalUpdate' in algorithm_cfg.distributed_algo:
         # No need to do anything
         update_done = True
 
@@ -259,9 +260,25 @@ def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1):
 
     return client, old_posit, initZ
 
-def get_image(client, vehicle_name, camera_type, first_frame, last_frame):
-    responses1 = client.simGetImages([  # depth visualization image
-        airsim.ImageRequest("1", airsim.ImageType.Scene, False,
+
+def get_SystemStats(process):
+    deviceCount = nvidia_smi.nvmlDeviceGetCount()
+    gpu_memory= []
+    gpu_utilization = []
+    for i in range(0, deviceCount):
+        handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
+        gpu_stat = nvidia_smi.nvmlDeviceGetUtilizationRates(handle)
+        gpu_memory.append(gpu_stat.memory)
+        gpu_utilization.append(gpu_stat.gpu)
+
+    sys_memory = process.memory_info()[0] / 2. ** 30
+
+    return gpu_memory, gpu_utilization, sys_memory
+
+def get_MonocularImageRGB(client, vehicle_name):
+
+    responses1 = client.simGetImages([
+        airsim.ImageRequest('front_center', airsim.ImageType.Scene, False,
                             False)], vehicle_name=vehicle_name)  # scene vision image in uncompressed RGBA array
 
     response = responses1[0]
@@ -270,34 +287,84 @@ def get_image(client, vehicle_name, camera_type, first_frame, last_frame):
     img = Image.fromarray(img_rgba)
     img_rgb = img.convert('RGB')
     camera_image_rgb = np.asarray(img_rgb)
+    camera_image = camera_image_rgb
 
-    if camera_type == 'optical':
-        camera_image = camera_image_rgb
+    return camera_image
 
-    if camera_type == 'DVS':
-        # camera_image = cv2.normalize(camera_image_rgb, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        frame1 = cv2.cvtColor(camera_image_rgb, cv2.COLOR_BGR2GRAY)
-        # frame23 = cv2.normalize(frame1, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-        frame = np.uint8(np.log1p(frame1))
-        frame = cv2.normalize(frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+def get_StereoImageRGB(client, vehicle_name):
+    camera_image=[]
+    responses = client.simGetImages(
+        [
+        airsim.ImageRequest('front_left', airsim.ImageType.Scene, False, False),
+        airsim.ImageRequest('front_right', airsim.ImageType.Scene, False, False)
+        ], vehicle_name=vehicle_name)
 
-        if first_frame:
-            camera_image = frame
-            first_frame = False
-        else:
-            camera_image = frame - last_frame
-        # ret, thresh1 = cv2.threshold(display_frame, 0.2, 0.8, cv2.THRESH_BINARY)
-        # display_frame1 = cv2.bitwise_and(display_frame, thresh1)
-        last_frame = frame
+    for i in range(2):
+        response = responses[i]
+        img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
+        img_rgba = img1d.reshape(response.height, response.width, 3)
+        img = Image.fromarray(img_rgba)
+        img_rgb = img.convert('RGB')
+        camera_image_rgb = np.asarray(img_rgb)
+        camera_image.append(camera_image_rgb)
 
-        camera_image = random_noise(camera_image, mode='s&p', amount=0.005)
-        camera_image = cv2.cvtColor(camera_image, cv2.COLOR_GRAY2BGR)
+    return camera_image
 
-        cv2.imshow('rgb', camera_image_rgb)
-        cv2.imshow('dvs', camera_image)
-        cc=1
+def get_CustomImage(client, vehicle_name, camera_name):
+    responses1 = client.simGetImages([
+        airsim.ImageRequest(camera_name, airsim.ImageType.Scene, False,
+                            False)], vehicle_name=vehicle_name)  # scene vision image in uncompressed RGBA array
 
-    return camera_image, first_frame, last_frame
+    response = responses1[0]
+    img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
+    img_rgba = img1d.reshape(response.height, response.width, 3)
+    img = Image.fromarray(img_rgba)
+    img_rgb = img.convert('RGB')
+    camera_image_rgb = np.asarray(img_rgb)
+    camera_image = camera_image_rgb
+
+    return camera_image
+
+
+# def get_image(client, vehicle_name, camera_type, first_frame, last_frame):
+#     responses1 = client.simGetImages([  # depth visualization image
+#         airsim.ImageRequest("1", airsim.ImageType.Scene, False,
+#                             False)], vehicle_name=vehicle_name)  # scene vision image in uncompressed RGBA array
+#
+#     response = responses1[0]
+#     img1d = np.fromstring(response.image_data_uint8, dtype=np.uint8)  # get numpy array
+#     img_rgba = img1d.reshape(response.height, response.width, 3)
+#     img = Image.fromarray(img_rgba)
+#     img_rgb = img.convert('RGB')
+#     camera_image_rgb = np.asarray(img_rgb)
+#
+#     if camera_type == 'optical':
+#         camera_image = camera_image_rgb
+#
+#     if camera_type == 'DVS':
+#         # camera_image = cv2.normalize(camera_image_rgb, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+#         frame1 = cv2.cvtColor(camera_image_rgb, cv2.COLOR_BGR2GRAY)
+#         # frame23 = cv2.normalize(frame1, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+#         frame = np.uint8(np.log1p(frame1))
+#         frame = cv2.normalize(frame, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+#
+#         if first_frame:
+#             camera_image = frame
+#             first_frame = False
+#         else:
+#             camera_image = frame - last_frame
+#         # ret, thresh1 = cv2.threshold(display_frame, 0.2, 0.8, cv2.THRESH_BINARY)
+#         # display_frame1 = cv2.bitwise_and(display_frame, thresh1)
+#         last_frame = frame
+#
+#         camera_image = random_noise(camera_image, mode='s&p', amount=0.005)
+#         camera_image = cv2.cvtColor(camera_image, cv2.COLOR_GRAY2BGR)
+#
+#         cv2.imshow('rgb', camera_image_rgb)
+#         cv2.imshow('dvs', camera_image)
+#         cc=1
+
+    # return camera_image, first_frame, last_frame
 
 
 def blit_text(surface, text, pos, font, color=pygame.Color('black')):
@@ -365,7 +432,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                 automate = False
                 print('Saving Model')
                 # agent.save_network(iter, save_path, ' ')
-                agent.save_network(algorithm_cfg.network_path)
+                agent.save_network(algorithm_cfg.network_path, episode='user')
                 # agent.save_data(iter, data_tuple, tuple_path)
 
 
