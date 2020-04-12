@@ -80,6 +80,7 @@ def generate_json(cfg):
 if __name__ == '__main__':
     # Read the config file
     cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
+    cfg.num_agents=1
     can_proceed = generate_json(cfg)
     if can_proceed:
         algorithm = importlib.import_module('algorithms.'+cfg.algorithm)
