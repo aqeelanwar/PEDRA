@@ -3,6 +3,7 @@
 # Email: aqeel.anwar@gatech.edu
 
 import sys, cv2
+import nvidia_smi
 from network.agent import PedraAgent
 from unreal_envs.initial_positions import *
 from os import getpid
@@ -30,16 +31,17 @@ def DeepQLearning(cfg):
         initial_pos = old_posit.copy()
         # Load the initial positions for the environment
         reset_array, reset_array_raw, level_name, crash_threshold = initial_positions(cfg.env_name, initZ, cfg.num_agents)
-        # Get memory handler
+
+        # Initialize System Handlers
         process = psutil.Process(getpid())
+        nvidia_smi.nvmlInit()
+
         # Load PyGame Screen
         screen = pygame_connect(phase=cfg.mode)
 
         fig_z = []
         fig_nav = []
         debug = False
-
-
         # Generate path where the weights will be saved
         cfg, algorithm_cfg = save_network_path(cfg=cfg, algorithm_cfg=algorithm_cfg)
         current_state = {}
@@ -100,6 +102,7 @@ def DeepQLearning(cfg):
         print_qval = False
         last_crash = {}
         ret = {}
+        distance = {}
         num_collisions = {}
         level = {}
         level_state = {}
@@ -127,13 +130,13 @@ def DeepQLearning(cfg):
             ret_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]))
             distance_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]))
             epi_env_array[name_agent] = np.zeros(shape=len(reset_array[name_agent]), dtype=np.int32)
-
+            distance[name_agent] = 0
             # Log file
             log_path = algorithm_cfg.network_path + '/' +name_agent +'/'+ cfg.mode + 'log.txt'
             print("Log path: ", log_path)
             log_files[name_agent] = open(log_path, 'w')
 
-        distance = 0
+
         # switch_env = False
 
         print_orderly('Simulation begins', 80)
@@ -171,7 +174,7 @@ def DeepQLearning(cfg):
                                 level_posit[name_agent][level[name_agent]] = posit1_old
                                 last_crash_array[name_agent][level[name_agent]] = last_crash[name_agent]
                                 ret_array[name_agent][level[name_agent]] = ret[name_agent]
-                                distance_array[name_agent][level[name_agent]] = distance
+                                distance_array[name_agent][level[name_agent]] = distance[name_agent]
                                 epi_env_array[name_agent][level[name_agent]] = episode[name_agent]
 
                                 level[name_agent] = (level[name_agent] + 1) % len(reset_array[name_agent])
@@ -189,7 +192,7 @@ def DeepQLearning(cfg):
 
                                 last_crash[name_agent] = last_crash_array[name_agent][level[name_agent]]
                                 ret[name_agent] = ret_array[name_agent][level[name_agent]]
-                                distance = distance_array[name_agent][level[name_agent]]
+                                distance[name_agent] = distance_array[name_agent][level[name_agent]]
                                 episode[name_agent] = epi_env_array[name_agent][int(level[name_agent]/3)]
                                 # environ = environ^True
                             else:
@@ -210,7 +213,7 @@ def DeepQLearning(cfg):
                                 agent[name_agent].take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
                                 # time.sleep(0.05)
                                 new_state[name_agent] = agent[name_agent].get_state()
-                                new_depth1, thresh = agent[name_agent].get_depth(cfg)
+                                new_depth1, thresh = agent[name_agent].get_CustomDepth(cfg)
 
 
                                 # Get GPS information
@@ -220,7 +223,7 @@ def DeepQLearning(cfg):
                                 new_p = np.array([position.x_val, position.y_val])
 
                                 # calculate distance
-                                distance = distance + np.linalg.norm(new_p - old_p)
+                                distance[name_agent] = distance[name_agent] + np.linalg.norm(new_p - old_p)
                                 old_posit[name_agent] = posit[name_agent]
 
                                 reward, crash = agent[name_agent].reward_gen(new_depth1, action, crash_threshold, thresh, debug, cfg)
@@ -259,17 +262,21 @@ def DeepQLearning(cfg):
                                             agent_this_drone.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
 
 
-
-
-
-
-                                # iter += 1
-
                                 time_exec = time.time()-start_time
+                                gpu_memory, gpu_utilization, sys_memory = get_SystemStats(process)
 
-                                mem_percent = process.memory_info()[0]/2.**30
+                                for i in range(0, len(gpu_memory)):
+                                    tag_mem = 'GPU'+str(i)+'-Memory-GB'
+                                    tag_util = 'GPU' + str(i) + 'Utilization-%'
+                                    agent[name_agent].log_to_tensorboard(tag=tag_mem, group='SystemStats', value=gpu_memory[i],
+                                                                         index=iter)
+                                    agent[name_agent].log_to_tensorboard(tag=tag_util,group='SystemStats', value=gpu_utilization[i],
+                                                                         index=iter)
+                                agent[name_agent].log_to_tensorboard(tag='Memory-GB',group='SystemStats', value=sys_memory,
+                                                                     index=iter)
 
-                                s_log = '{:<6s} - Level {:>2d} - Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} Mem = {:<5.4f}  Reward: {:<+1.4f}  '.format(
+
+                                s_log = '{:<6s} - Level {:>2d} - Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} SF = {:<5.4f}  Reward: {:<+1.4f}  '.format(
                                         name_agent,
                                         int(level[name_agent]),
                                         iter,
@@ -281,7 +288,7 @@ def DeepQLearning(cfg):
                                         ret[name_agent],
                                         last_crash[name_agent],
                                         time_exec,
-                                        mem_percent,
+                                        distance[name_agent],
                                         reward)
 
                                 if iter%print_interval==0:
@@ -294,15 +301,20 @@ def DeepQLearning(cfg):
                                     cv2.waitKey(1)
 
                                 if crash:
-                                    agent[name_agent].return_plot(ret[name_agent], episode[name_agent], int(level[name_agent]/3), mem_percent, iter, distance)
+                                    agent[name_agent].log_to_tensorboard(tag='Return', group=name_agent, value=ret[name_agent],
+                                                                         index=episode[name_agent])
+                                    agent[name_agent].log_to_tensorboard(tag='Safe Flight',group=name_agent, value=distance[name_agent],
+                                                                         index=episode[name_agent])
+
                                     ret[name_agent] = 0
-                                    distance = 0
+                                    distance[name_agent] = 0
                                     episode[name_agent] = episode[name_agent] + 1
                                     last_crash[name_agent] = 0
 
                                     reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
                                     # time.sleep(0.2)
                                     current_state[name_agent] = agent[name_agent].get_state()
+                                    old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
                                 else:
                                     current_state[name_agent] = new_state[name_agent]
 
@@ -340,7 +352,7 @@ def DeepQLearning(cfg):
                         agent_state = agent[name_agent].GetAgentState()
                         if agent_state.has_collided:
                             print('Drone collided')
-                            print("Total distance traveled: ", np.round(distance, 2))
+                            print("Total distance traveled: ", np.round(distance[name_agent], 2))
                             active = False
                             client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=1, vehicle_name=name_agent).join()
 
@@ -353,7 +365,7 @@ def DeepQLearning(cfg):
                             print('Figures saved')
                         else:
                             posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
-                            distance = distance + np.linalg.norm(np.array([old_posit[name_agent].position.x_val-posit[name_agent].position.x_val,old_posit[name_agent].position.y_val-posit[name_agent].position.y_val]))
+                            distance[name_agent] = distance[name_agent] + np.linalg.norm(np.array([old_posit[name_agent].position.x_val-posit[name_agent].position.x_val,old_posit[name_agent].position.y_val-posit[name_agent].position.y_val]))
                             # altitude[name_agent].append(-posit[name_agent].position.z_val+p_z)
                             altitude[name_agent].append(-posit[name_agent].position.z_val-f_z)
 
@@ -368,7 +380,7 @@ def DeepQLearning(cfg):
                             nav_y.append(env_cfg.alpha*y_val+env_cfg.o_y)
                             nav.set_data(nav_x, nav_y)
                             nav_text.remove()
-                            nav_text = ax_nav.text(25, 55, 'Distance: '+str(np.round(distance, 2)), style='italic',
+                            nav_text = ax_nav.text(25, 55, 'Distance: '+str(np.round(distance[name_agent], 2)), style='italic',
                                                    bbox={'facecolor': 'white', 'alpha': 0.5})
 
                             line_z.set_data(np.arange(len(altitude[name_agent])), altitude[name_agent])

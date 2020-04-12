@@ -43,14 +43,14 @@ class AlexNetDuel(object):
         self.flat = tf.contrib.layers.flatten(self.maxpool5)
 
         # Advantage Network
-        self.fc6_a = self.FullyConnected(self.flat,     units_in=9216, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc6_a = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
         self.fc7_a = self.FullyConnected(self.fc6_a,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
         self.fc8_a = self.FullyConnected(self.fc7_a,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
         self.fc9_a = self.FullyConnected(self.fc8_a,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
         self.fc10_a = self.FullyConnected(self.fc9_a,   units_in=512,  units_out=num_actions, act='linear', trainable=True)
 
         # Value Network
-        self.fc6_v = self.FullyConnected(self.flat,     units_in=9216, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc6_v = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
         self.fc7_v = self.FullyConnected(self.fc6_v,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
         self.fc8_v = self.FullyConnected(self.fc7_v,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
         self.fc9_v = self.FullyConnected(self.fc8_v,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
