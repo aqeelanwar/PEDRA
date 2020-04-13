@@ -225,7 +225,7 @@ def DeepQLearning(cfg):
 
 
                             time_exec = time.time()-start_time
-                            gpu_memory, gpu_utilization, sys_memory = get_SystemStats(process)
+                            gpu_memory, gpu_utilization, sys_memory = get_SystemStats(process, cfg.NVIDIA_GPU)
 
                             for i in range(0, len(gpu_memory)):
                                 tag_mem = 'GPU'+str(i)+'-Memory-GB'

@@ -261,15 +261,19 @@ def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1):
     return client, old_posit, initZ
 
 
-def get_SystemStats(process):
-    deviceCount = nvidia_smi.nvmlDeviceGetCount()
-    gpu_memory= []
-    gpu_utilization = []
-    for i in range(0, deviceCount):
-        handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
-        gpu_stat = nvidia_smi.nvmlDeviceGetUtilizationRates(handle)
-        gpu_memory.append(gpu_stat.memory)
-        gpu_utilization.append(gpu_stat.gpu)
+def get_SystemStats(process, NVIDIA_GPU):
+    if NVIDIA_GPU:
+        deviceCount = nvidia_smi.nvmlDeviceGetCount()
+        gpu_memory= []
+        gpu_utilization = []
+        for i in range(0, deviceCount):
+            handle = nvidia_smi.nvmlDeviceGetHandleByIndex(i)
+            gpu_stat = nvidia_smi.nvmlDeviceGetUtilizationRates(handle)
+            gpu_memory.append(gpu_stat.memory)
+            gpu_utilization.append(gpu_stat.gpu)
+    else:
+        gpu_memory = []
+        gpu_utilization = []
 
     sys_memory = process.memory_info()[0] / 2. ** 30
 
