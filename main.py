@@ -1,6 +1,7 @@
 from aux_functions import *
 from configs.read_cfg import read_cfg
 import importlib, json
+import nvidia_smi
 from unreal_envs.initial_positions import *
 # from aux_functions import *
 # TF Debug message suppressed
@@ -81,6 +82,12 @@ if __name__ == '__main__':
     # Read the config file
     cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
     can_proceed = generate_json(cfg)
+    # Check if NVIDIA GPU is available
+    try:
+        nvidia_smi.nvmlInit()
+        cfg.NVIDIA_GPU = True
+    except:
+        cfg.NVIDIA_GPU = False
     if can_proceed:
         algorithm = importlib.import_module('algorithms.'+cfg.algorithm)
         name = 'algorithm.' + cfg.algorithm + '(cfg)'
