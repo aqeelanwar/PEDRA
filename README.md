@@ -36,8 +36,17 @@ The most important feature of PEDRA is the high level python modules that can be
 The current version of PEDRA supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
 
 ## Clone the repository
+To make things simple and easier, PEDRA comes equip with two versions.
+* PEDRA_SingleDrone:
+* PEDRA_MultipleDrones
+
+Each of this version is a branch in the repository and can be downloaded as follows
 ```
-git clone https://github.com/aqeelanwar/PEDRA.git
+# PEDRA_SingleDrone
+git clone --single-branch --branch PEDRA_SingleDrone https://github.com/aqeelanwar/PEDRA.git
+
+# PEDRA_MultipleDrones
+git clone --single-branch --branch PEDRA_MultipleDrones https://github.com/aqeelanwar/PEDRA.git
 ```
 
 
