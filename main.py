@@ -89,13 +89,16 @@ if __name__ == '__main__':
     except:
         cfg.NVIDIA_GPU = False
     if can_proceed:
+        # Start the environment
+        env_process, env_folder = start_environment(env_name=cfg.env_name)
+
         # If mode = move_around, don't initialize any algorithm
-        if cfg.mode == 'move_around':
-            env_process, env_folder = start_environment(env_name=cfg.env_name)
-        else:
+        if cfg.mode != 'move_around':
             algorithm = importlib.import_module('algorithms.' + cfg.algorithm)
-            name = 'algorithm.' + cfg.algorithm + '(cfg)'
+            name = 'algorithm.' + cfg.algorithm + '(cfg, env_process, env_folder)'
             eval(name)
+        else:
+            print('Use keyboard to navigate')
 
 
 
