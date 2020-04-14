@@ -14,16 +14,16 @@ from util.transformations import euler_from_quaternion
 from configs.read_cfg import read_cfg, update_algorithm_cfg
 
 
-def DeepQLearning(cfg):
+def DeepQLearning(cfg, env_process, env_folder):
 
     algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
 
-    if 'GlobalLearningGlobalUpdate-SA' in algorithm_cfg.distributed_algo or cfg.mode == 'infer':
+    if 'GlobalLearningGlobalUpdate-SA' in algorithm_cfg.distributed_algo:
         # algorithm_cfg = update_algorithm_cfg(algorithm_cfg, cfg)
         cfg.num_agents = 1
 
-    # Start the environment
-    env_process, env_folder = start_environment(env_name=cfg.env_name)
+    # # Start the environment
+    # env_process, env_folder = start_environment(env_name=cfg.env_name)
     # Connect to Unreal Engine and get the drone handle: client
     client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode, num_agents=cfg.num_agents)
     initial_pos = old_posit.copy()
