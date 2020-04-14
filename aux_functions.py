@@ -45,7 +45,7 @@ def communicate_across_agents(agent, name_agent_list, algorithm_cfg):
 
     elif algorithm_cfg.distributed_algo == 'LocalLearningGlobalUpdate':
         agent_on_same_network = name_agent_list
-        agent[name_agent].initialize_graphs_with_average(agent, agent_on_same_network)
+        agent[name_agent].network_model.initialize_graphs_with_average(agent, agent_on_same_network)
 
     elif algorithm_cfg.distributed_algo == 'LocalLearningLocalUpdate':
         agent_connectivity_graph = []
@@ -61,7 +61,7 @@ def communicate_across_agents(agent, name_agent_list, algorithm_cfg):
 
         for agent_network in agent_connectivity_graph:
             agent_on_same_network = agent_network
-            agent[name_agent].initialize_graphs_with_average(agent, agent_on_same_network)
+            agent[name_agent].network_model.initialize_graphs_with_average(agent, agent_on_same_network)
 
     return update_done
 
@@ -162,13 +162,13 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
     #
     # oldQval = np.zeros(shape = [batch_size, num_actions])
     if choose:
-        oldQval_A = target_agent.Q_val(curr_states)
-        newQval_A = target_agent.Q_val(new_states)
-        newQval_B = agent.Q_val(new_states)
+        oldQval_A = target_agent.network_model.Q_val(curr_states)
+        newQval_A = target_agent.network_model.Q_val(new_states)
+        newQval_B = agent.network_model.Q_val(new_states)
     else:
-        oldQval_A = agent.Q_val(curr_states)
-        newQval_A = agent.Q_val(new_states)
-        newQval_B = target_agent.Q_val(new_states)
+        oldQval_A = agent.network_model.Q_val(curr_states)
+        newQval_A = agent.network_model.Q_val(new_states)
+        newQval_B = target_agent.network_model.Q_val(new_states)
 
 
     TD = np.zeros(shape=[batch_size])
@@ -213,7 +213,7 @@ def policy(epsilon, curr_state, iter, b, epsilon_model, wait_before_train, num_a
         action_type = 'Rand'
     else:
         # Use NN to predict action
-        action = agent.action_selection(curr_state)
+        action = agent.network_model.action_selection(curr_state)
         action_type = 'Pred'
         # print(action_array/(np.mean(action_array)))
     return action, action_type, epsilon, qvals
@@ -436,7 +436,7 @@ def check_user_input(active, automate, agent, client, old_posit, initZ, fig_z, f
                 automate = False
                 print('Saving Model')
                 # agent.save_network(iter, save_path, ' ')
-                agent.save_network(algorithm_cfg.network_path, episode='user')
+                agent.network_model.save_network(algorithm_cfg.network_path, episode='user')
                 # agent.save_data(iter, data_tuple, tuple_path)
 
 

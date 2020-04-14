@@ -17,7 +17,7 @@ from configs.read_cfg import read_cfg, update_algorithm_cfg
 def DeepQLearning(cfg, env_process, env_folder):
 
     algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
-
+    algorithm_cfg.algorithm = cfg.algorithm
     # Connect to Unreal Engine and get the drone handle: client
     client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode, num_agents=cfg.num_agents)
     initial_pos = old_posit.copy()
@@ -38,7 +38,6 @@ def DeepQLearning(cfg, env_process, env_folder):
     current_state = {}
     new_state = {}
     posit = {}
-    name_agent_list = []
     agent = {}
     # Replay Memory for RL
     if cfg.mode == 'train':
@@ -214,9 +213,9 @@ def DeepQLearning(cfg, env_process, env_folder):
                                 # TODO global agent, target_agent: DONE
                                 if choose:
                                     # Double-DQN
-                                    target_agent[name_agent].train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                    target_agent[name_agent].network_model.train_n(old_states, Qvals, actions, algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
                                 else:
-                                    agent[name_agent].train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
+                                    agent[name_agent].network_model.train_n(old_states, Qvals,actions,  algorithm_cfg.batch_size, algorithm_cfg.dropout_rate, algorithm_cfg.learning_rate, algorithm_cfg.epsilon, iter)
 
 
                         time_exec = time.time()-start_time
@@ -225,11 +224,11 @@ def DeepQLearning(cfg, env_process, env_folder):
                         for i in range(0, len(gpu_memory)):
                             tag_mem = 'GPU'+str(i)+'-Memory-GB'
                             tag_util = 'GPU' + str(i) + 'Utilization-%'
-                            agent[name_agent].log_to_tensorboard(tag=tag_mem, group='SystemStats', value=gpu_memory[i],
+                            agent[name_agent].network_model.log_to_tensorboard(tag=tag_mem, group='SystemStats', value=gpu_memory[i],
                                                                  index=iter)
-                            agent[name_agent].log_to_tensorboard(tag=tag_util,group='SystemStats', value=gpu_utilization[i],
+                            agent[name_agent].network_model.log_to_tensorboard(tag=tag_util,group='SystemStats', value=gpu_utilization[i],
                                                                  index=iter)
-                        agent[name_agent].log_to_tensorboard(tag='Memory-GB',group='SystemStats', value=sys_memory,
+                        agent[name_agent].network_model.log_to_tensorboard(tag='Memory-GB',group='SystemStats', value=sys_memory,
                                                              index=iter)
 
 
@@ -258,9 +257,9 @@ def DeepQLearning(cfg, env_process, env_folder):
                             cv2.waitKey(1)
 
                         if crash:
-                            agent[name_agent].log_to_tensorboard(tag='Return', group=name_agent, value=ret[name_agent],
+                            agent[name_agent].network_model.log_to_tensorboard(tag='Return', group=name_agent, value=ret[name_agent],
                                                                  index=episode[name_agent])
-                            agent[name_agent].log_to_tensorboard(tag='Safe Flight',group=name_agent, value=distance[name_agent],
+                            agent[name_agent].network_model.log_to_tensorboard(tag='Safe Flight',group=name_agent, value=distance[name_agent],
                                                                  index=episode[name_agent])
 
                             ret[name_agent] = 0
@@ -285,10 +284,9 @@ def DeepQLearning(cfg, env_process, env_folder):
 
                     # TODO define and state agents
                     if iter % algorithm_cfg.update_target_interval == 0 and iter > algorithm_cfg.wait_before_train:
-                        for name_agent in name_agent_list:
-                            agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
-                            print(name_agent + ' - Switching Target Network')
-                            agent[name_agent].save_network(algorithm_cfg.network_path, episode[name_agent])
+                        agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
+                        print(name_agent + ' - Switching Target Network')
+                        agent[name_agent].network_model.save_network(algorithm_cfg.network_path, episode[name_agent])
 
                         choose = not choose
 
