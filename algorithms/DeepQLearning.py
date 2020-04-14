@@ -30,7 +30,6 @@ def DeepQLearning(cfg):
 
         # Initialize System Handlers
         process = psutil.Process(getpid())
-        nvidia_smi.nvmlInit()
 
         # Load PyGame Screen
         screen = pygame_connect(phase=cfg.mode)
