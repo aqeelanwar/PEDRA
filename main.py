@@ -88,10 +88,15 @@ if __name__ == '__main__':
         cfg.NVIDIA_GPU = True
     except:
         cfg.NVIDIA_GPU = False
+
     if can_proceed:
-        algorithm = importlib.import_module('algorithms.'+cfg.algorithm)
-        name = 'algorithm.' + cfg.algorithm + '(cfg)'
-        eval(name)
+        # If mode = move_around, don't initialize any algorithm
+        if cfg.mode == 'move_around':
+            env_process, env_folder = start_environment(env_name=cfg.env_name)
+        else:
+            algorithm = importlib.import_module('algorithms.'+cfg.algorithm)
+            name = 'algorithm.' + cfg.algorithm + '(cfg)'
+            eval(name)
 
 
 
