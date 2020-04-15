@@ -161,7 +161,8 @@ class initialize_network_DeepREINFORCE():
     def __init__(self, cfg, name, vehicle_name):
         self.g = tf.Graph()
         self.vehicle_name = vehicle_name
-
+        self.iter_baseline =0
+        self.iter_policy = 0
         self.first_frame = True
         self.last_frame = []
         with self.g.as_default():
@@ -182,11 +183,11 @@ class initialize_network_DeepREINFORCE():
             # self.X = tf.image.resize_images(self.X1, (227, 227))
 
             self.X = tf.map_fn(lambda frame: tf.image.per_image_standardization(frame), self.X1)
-            self.target = tf.placeholder(tf.float32, shape=[None], name='action_probs')
-            self.target_baseline = tf.placeholder(tf.float32, shape=[None], name='baseline')
+            # self.target = tf.placeholder(tf.float32, shape=[None], name='action_probs')
+            # self.target_baseline = tf.placeholder(tf.float32, shape=[None], name='baseline')
             self.actions = tf.placeholder(tf.int32, shape=[None], name='Actions')
-            G = tf.placeholder(tf.float32, shape=[None], name='G')
-            B = tf.placeholder(tf.float32, shape=[None], name='B')
+            self.G = tf.placeholder(tf.float32, shape=[None], name='G')
+            self.B = tf.placeholder(tf.float32, shape=[None], name='B')
 
             # self.model = AlexNetDuel(self.X, cfg.num_actions, cfg.train_fc)
             self.model = C3F2_REINFORCE(self.X, cfg.num_actions, cfg.train_fc)
@@ -195,13 +196,30 @@ class initialize_network_DeepREINFORCE():
             self.baseline = self.model.baseline
 
             ind = tf.one_hot(self.actions, cfg.num_actions)
-            prob_action = tf.reduce_sum(tf.multiply(self.model.output, ind), axis=1)
+            prob_action = tf.reduce_sum(tf.multiply(self.predict, ind), axis=1)
 
-            loss_policy = tf.reduce_mean(tf.log(prob_action) * (G - B))
+            loss_policy = tf.reduce_mean(tf.log(prob_action) * (self.G - self.B))
 
-            self.loss = huber_loss(pred_Q, self.target)
-            self.train = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.99).minimize(
-                self.loss, name="train")
+            loss_entropy = -tf.reduce_mean((tf.log(self.predict)+1e-8)*self.predict)
+
+            self.loss_main = -loss_policy - .1*loss_entropy
+            self.loss_branch = huber_loss(self.baseline, self.B)
+
+            optimizer = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.99)
+
+            # gvs_main = optimizer.compute_gradients(self.loss_main)
+            # clipped_gvs_main = [(grad if grad is None else tf.clip_by_value(grad, -0.1, 0.1), var) for grad, var in gvs_main]
+            # self.train_main = optimizer.apply_gradients(clipped_gvs_main, name="train_main")
+            #
+            # gvs_branch = optimizer.compute_gradients(self.loss_branch)
+            # clipped_gvs_branch = [(grad if grad is None else tf.clip_by_value(grad, -0.1, 0.1), var) for grad, var in gvs_branch]
+            # self.train_branch = optimizer.apply_gradients(clipped_gvs_branch, name="train_branch")
+
+            self.train_main = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.99).minimize(
+                self.loss_main, name="train_main")
+
+            self.train_branch = tf.train.AdamOptimizer(learning_rate=self.learning_rate, beta1=0.9, beta2=0.99).minimize(
+                self.loss_branch, name="train_branch")
 
             self.sess = tf.InteractiveSession()
             tf.global_variables_initializer().run()
@@ -241,40 +259,81 @@ class initialize_network_DeepREINFORCE():
                 var[name_agent][i].load(mean_val, agent[name_agent].network_model.sess)
 
 
-    def Q_val(self, xs):
+    def prob_actions(self, xs):
         target = np.zeros(shape=[xs.shape[0]], dtype=np.float32)
+        target_baseline = np.zeros(shape=[1], dtype=np.float32)
+        G = np.zeros(shape=[1], dtype=np.float32)
+        B = np.zeros(shape=[1], dtype=np.float32)
         actions = np.zeros(dtype=int, shape=[xs.shape[0]])
         return self.sess.run(self.predict,
                              feed_dict={self.batch_size: xs.shape[0], self.learning_rate: 0, self.X1: xs,
-                                        self.target: target, self.actions: actions})
+                                        self.actions: actions,
+                                        self.B: B,
+                                        self.G: G})
 
 
-    def train_n(self, xs, ys, actions, batch_size, dropout_rate, lr, epsilon, iter):
-        _, loss, Q = self.sess.run([self.train, self.loss, self.predict],
-                                   feed_dict={self.batch_size: batch_size, self.learning_rate: lr, self.X1: xs,
-                                              self.target: ys, self.actions: actions})
-        meanQ = np.mean(Q)
-        maxQ = np.max(Q)
+    def train_baseline(self, xs, G, actions, lr, iter):
+        self.iter_baseline+=1
+        batch_size = xs.shape[0]
+        train_eval = self.train_branch
+        loss_eval = self.loss_branch
+        predict_eval = self.baseline
+        target = np.zeros(shape=[xs.shape[0]], dtype=np.float32)
+        B = target
+
+        _, loss, baseline_val = self.sess.run([train_eval, loss_eval, predict_eval],
+                                               feed_dict={self.batch_size: xs.shape[0], self.learning_rate: 0,
+                                                          self.X1: xs,
+                                                          self.actions: actions,
+                                                          self.B: B,
+                                                          self.G: G})
+
+        # meanQ = np.mean(baseline_val)
+        # maxQ = np.max(baseline_val)
         # Log to tensorboard
-        self.log_to_tensorboard(tag='Loss', group=self.vehicle_name, value=LA.norm(loss) / batch_size, index=iter)
-        self.log_to_tensorboard(tag='Epsilon', group=self.vehicle_name, value=epsilon, index=iter)
+        self.log_to_tensorboard(tag='Loss_Baseline', group=self.vehicle_name, value=LA.norm(loss) / batch_size, index=self.iter_baseline)
+        # self.log_to_tensorboard(tag='Epsilon', group=self.vehicle_name, value=epsilon, index=iter)
         self.log_to_tensorboard(tag='Learning Rate', group=self.vehicle_name, value=lr, index=iter)
-        self.log_to_tensorboard(tag='MeanQ', group=self.vehicle_name, value=meanQ, index=iter)
-        self.log_to_tensorboard(tag='MaxQ', group=self.vehicle_name, value=maxQ, index=iter)
+        # self.log_to_tensorboard(tag='MeanQ', group=self.vehicle_name, value=meanQ, index=iter)
+        # self.log_to_tensorboard(tag='MaxQ', group=self.vehicle_name, value=maxQ, index=iter)
+
+        return baseline_val
+
+
+    def train_policy(self, xs, actions, B, G, lr, iter):
+        self.iter_policy+=1
+        batch_size = xs.shape[0]
+        train_eval = self.train_main
+        loss_eval = self.loss_main
+        predict_eval = self.predict
+
+        _, loss, predicted_val = self.sess.run([train_eval, loss_eval, predict_eval],
+                                               feed_dict={self.batch_size: xs.shape[0], self.learning_rate: 0,
+                                                          self.X1: xs,
+                                                          self.actions: actions,
+                                                          self.B: B,
+                                                          self.G: G})
+
+        # meanQ = np.mean(predicted_val)
+        maxQ = np.max(predicted_val)
+        # Log to tensorboard
+        self.log_to_tensorboard(tag='Loss_Policy', group=self.vehicle_name, value=LA.norm(loss) / batch_size, index=self.iter_policy)
+        # self.log_to_tensorboard(tag='Epsilon', group=self.vehicle_name, value=epsilon, index=iter)
+        self.log_to_tensorboard(tag='Learning Rate', group=self.vehicle_name, value=lr, index=iter)
+        # self.log_to_tensorboard(tag='MeanQ', group=self.vehicle_name, value=meanQ, index=iter)
+        self.log_to_tensorboard(tag='MaxProb', group=self.vehicle_name, value=maxQ, index=iter)
 
 
     def action_selection(self, state):
-        target = np.zeros(shape=[state.shape[0]], dtype=np.float32)
-        target_baseline = np.zeros(shape=[1], dtype=np.float32)
 
         action = np.zeros(dtype=int, shape=[state.shape[0]])
         probs = self.sess.run(self.predict,
                               feed_dict={self.batch_size: state.shape[0], self.learning_rate: 0.0001,
                                          self.X1: state,
-                                         self.target: target, self.actions: action})
+                                         self.actions: action})
 
         for j in range(probs.shape[0]):
-            action[j] = np.random.choice(self.num_actions, 1, p=[0.1, 0, 0.3, 0.6, 0])
+            action[j] = np.random.choice(self.num_actions, 1, p=probs[j])[0]
 
         return action.astype(int)
 
@@ -303,7 +362,7 @@ class initialize_network_DeepREINFORCE():
         return self.sess.run(self.weights,
                              feed_dict={self.batch_size: xs.shape[0], self.learning_rate: 0,
                                         self.X1: xs,
-                                        self.target: ys, self.actions: actions})
+                                        self.actions: actions})
 
 
 

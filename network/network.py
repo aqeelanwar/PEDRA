@@ -207,7 +207,7 @@ class C3F2_REINFORCE(object):
         elif act == 'linear':
             return tf.nn.xw_plus_b(input, W, b)
         elif act == 'softmax':
-            return tf.nn.softmax(input)
+            return tf.nn.softmax(tf.nn.xw_plus_b(input, W, b))
         else:
             assert (1 == 0)
 
