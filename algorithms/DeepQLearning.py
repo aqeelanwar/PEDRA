@@ -339,10 +339,10 @@ def DeepQLearning(cfg, env_process, env_folder):
 
                         choose = not choose
 
-                    if iter % algorithm_cfg.communication_interval == 0 and iter > algorithm_cfg.wait_before_train:
-                        print('Communicating the weights and averaging them')
-                        communicate_across_agents(agent, name_agent_list, algorithm_cfg)
-                        communicate_across_agents(target_agent, name_agent_list, algorithm_cfg)
+                    # if iter % algorithm_cfg.communication_interval == 0 and iter > algorithm_cfg.wait_before_train:
+                    #     print('Communicating the weights and averaging them')
+                    #     communicate_across_agents(agent, name_agent_list, algorithm_cfg)
+                    #     communicate_across_agents(target_agent, name_agent_list, algorithm_cfg)
 
                     iter += 1
 
