@@ -230,7 +230,7 @@ def DeepQLearning(cfg, env_process, env_folder):
                             ret[name_agent] = ret[name_agent]+reward
                             agent_state = agent[name_agent].GetAgentState()
 
-                            if agent_state.has_collided:
+                            if agent_state.has_collided or distance[name_agent]<0.1:
                                 num_collisions[name_agent] = num_collisions[name_agent] + 1
                                 print('crash')
                                 crash = True
