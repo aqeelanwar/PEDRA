@@ -330,7 +330,7 @@ def DeepQLearning(cfg, env_process, env_folder):
 
                         if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
                             print('global' + ' - Switching Target Network')
-                            global_agent.save_network(algorithm_cfg.network_path, episode[name_agent])
+                            global_agent.network_model.save_network(algorithm_cfg.network_path, episode[name_agent])
                         else:
                             for name_agent in name_agent_list:
                                 agent[name_agent].take_action([-1], algorithm_cfg.num_actions, SimMode=cfg.SimMode)
