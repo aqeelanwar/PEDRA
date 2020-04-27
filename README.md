@@ -144,18 +144,24 @@ This config file is used to set high-level simulation parameters. The complete l
 | Parameter            | Explanation                                                                          | Possible values                      |
 |------------------    |-----------------------------------------------------------------------------------   |----------------------------------    |
 | run_name             | Name for the current simulation                                                      | Any value                        |
-| custom_load          | Dictates if user wants to load the network with custom weights                       | True/False                           |
-| custom_load_path     | If custom_load is set to True, this dictates the path of the weights to be loaded    | Relative path to weights             |
 | env_type             | Type of the environment (to be used in future versions)                              | indoor/outdoor                       |
 | env_name             | Name of the environment to be used in the simulation                                 | indoor_cloud, indoor_techno etc.     |
-| mode             | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
+| ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
+| algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
+| mode                 | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
 | SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
 | drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
 | ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
-| algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
-| ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
 | num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
 
+#### Drone Parameters [drone_params]:
+
+| Parameter            | Explanation                                                                          | Possible values                      |
+|------------------    |-----------------------------------------------------------------------------------   |----------------------------------    |
+| SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
+| num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
+| drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
+| ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
 
 
 #### Camera Parameters [camera_params]:
@@ -176,6 +182,7 @@ This config file is used to set high-level simulation parameters. The complete l
 |-- PEDRA
 |    |-- configs
 |    |    |-- DeepQLearning.cfg
+|    |    |-- DeepREINFORCE.cfg
 ```
 
 Based on the algorithm selected in the general_param category of the main config file (config.cfg), algorithm-specific config file needs to be edited for user provided parameters. More details on this can be found [here](/algorithms/readme.md)
@@ -202,17 +209,21 @@ Running main.py carries out the following steps
 * Attempt to begin the algorithm
 
 
-At this point, the drone can be seen moving around in the environment.
+To speed up the algorithm, the environment rendering is turned off. A detailed documentation on how
+to interact with the environment graphics can be seen [here](/unreal_envs/readme.md). In order to see if the drone is 
+moving around the environment, hit the key 'Z' on the environment screen. A floorplan containing the drone will appear in the
+top right corner.
 
 
 ## Available drone agents:
+PEDRA comes equip with 3 drones
 1. ARDrone
 2. DJIMavic
 3. DJIPhantom
 
 The images of these drones can be seen below.
 ![drone_types](/images/drone_types.png)
-Different action space can be associated with each of these drones.
+Different action space can be associated with each of these drones. The config file can be used to select one of these drones.
 
 
 ## Supported modes:
