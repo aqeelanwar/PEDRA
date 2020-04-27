@@ -145,6 +145,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
 | mode                 | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
 
+
 #### Drone Parameters [drone_params]:
 
 | Parameter            | Explanation                                                                          | Possible values                      |
@@ -243,6 +244,7 @@ tensorboard --logdir e2e                         # Example
 ```
 
 The terminal will display the local URL that can be opened up on any browser, and the tensorboard display will appear plotting the DRL parameters on run-time.
+
 ![tensorboard](/images/tf.png)
 
 ## Run-time controls using PyGame screen
