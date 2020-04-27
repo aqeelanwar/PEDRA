@@ -8,22 +8,22 @@
 PEDRA comes equip with a library of 3D realistic environments that can be used for drone applications. The environments fall into two categories.
 
 * Indoor Environments:
-  * Indoor Long Environment
-  * Indoor Twist Environment
-  * Indoor VanLeer Environment
-  * Indoor Techno Environment
-  * Indoor Pyramid Environment
-  * Indoor FrogEyes Environment
-  * Indoor GT Environment
-  * Indoor Complex Environment
-  * Indoor UpDown Environment
-  * Indoor Cloud Environment
+  * [Indoor Long Environment](https://www.youtube.com/watch?v=QsSAXgIV8LA&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=6)
+  * [Indoor Twist Environment](https://www.youtube.com/watch?v=g-YYvRfv2-E&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=12)
+  * [Indoor VanLeer Environment](https://www.youtube.com/watch?v=isf_SWWdWAI&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=3)
+  * [Indoor Techno Environment](https://www.youtube.com/watch?v=IxKCd93rm30&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=2)
+  * [Indoor Pyramid Environment](https://www.youtube.com/watch?v=r4O2qDQRpbc&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=7)
+  * [Indoor FrogEyes Environment](https://www.youtube.com/watch?v=TwNFu06UdQo&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=4)
+  * [Indoor GT Environment](https://www.youtube.com/watch?v=yc4j727R2i0&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=5)
+  * [Indoor Complex Environment](https://www.youtube.com/watch?v=ztMyCdLb3Fg&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=13)
+  * [Indoor UpDown Environment](https://www.youtube.com/watch?v=PkKUNod30SE&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=8)
+  * [Indoor Cloud Environment](https://www.youtube.com/watch?v=qAUzzDQEweA&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=14)
 
 
 * Outdoor Environments:
-  * Outdoor Courtyard
-  * Outdoor Forest
-  * Outdoor OldTown
+  * [Outdoor Courtyard](https://www.youtube.com/watch?v=TX-QJc3aO3c&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=11)
+  * [Outdoor Forest](https://www.youtube.com/watch?v=f0EeGkngC4w&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=10)
+  * [Outdoor OldTown](https://www.youtube.com/watch?v=qb3xc_FbACk&list=PLPF003gzWEyGB-gSAA2k-U5Lv9cXGp9dG&index=9)
 
 <!-- TODO: -->
 <!-- The videos above is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it. -->
