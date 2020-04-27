@@ -4,13 +4,15 @@
 import numpy as np
 import tensorflow as tf
 
-def huber_loss(X,Y):
-    err = X-Y
+
+def huber_loss(X, Y):
+    err = X - Y
     loss = tf.where(tf.abs(err) < 1.0, 0.5 * tf.square(err), tf.abs(err) - 0.5)
     loss = tf.reduce_sum(loss)
 
     return loss
 
-def mse_loss(X,Y):
-    err=X-Y
+
+def mse_loss(X, Y):
+    err = X - Y
     return tf.reduce_sum(tf.square(err))
