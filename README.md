@@ -136,8 +136,6 @@ This config file is used to set high-level simulation parameters. The complete l
 
 #### General Parameters [general_params]:
 
-
-
 | Parameter            | Explanation                                                                          | Possible values                      |
 |------------------    |-----------------------------------------------------------------------------------   |----------------------------------    |
 | run_name             | Name for the current simulation                                                      | Any value                        |
@@ -146,6 +144,7 @@ This config file is used to set high-level simulation parameters. The complete l
 | ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
 | algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
 | mode                 | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
+
 #### Drone Parameters [drone_params]:
 
 | Parameter            | Explanation                                                                          | Possible values                      |
