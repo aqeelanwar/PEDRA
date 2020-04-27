@@ -33,10 +33,17 @@ class PedraAgent():
     # Drone related modules
     ###########################################################################
 
-    def take_action(self, action, num_actions, SimMode):
+    def take_action(self, action, num_actions, Mode):
+        # Mode
+        # static: The drone moves by position. The position corresponding to the action
+        # is calculated and the drone moves to the position and remains still
+        # dynaic: The drone moves by velocity. The velocity corresponding to the action
+        # is calculated and teh drone executes the same velocity command until next velocity
+        # command is executed to overwrite it.
+
         # Set Paramaters
-        fov_v = (45 * np.pi / 180)/1.5
-        fov_h = (80 * np.pi / 180)/1.5
+        fov_v = (45 * np.pi / 180) / 1.5
+        fov_h = (80 * np.pi / 180) / 1.5
         r = 0.4
 
         ignore_collision = False
@@ -53,11 +60,10 @@ class PedraAgent():
         theta_ind = int(action[0] / sqrt_num_actions)
         psi_ind = action[0] % sqrt_num_actions
 
-        theta = fov_v/sqrt_num_actions * (theta_ind - (sqrt_num_actions - 1) / 2)
+        theta = fov_v / sqrt_num_actions * (theta_ind - (sqrt_num_actions - 1) / 2)
         psi = fov_h / sqrt_num_actions * (psi_ind - (sqrt_num_actions - 1) / 2)
 
-
-        if SimMode == 'ComputerVision':
+        if Mode == 'static':
             noise_theta = (fov_v / sqrt_num_actions) / 6
             noise_psi = (fov_h / sqrt_num_actions) / 6
 
@@ -68,9 +74,10 @@ class PedraAgent():
             y = pos.y_val + r * np.sin(alpha + psi)
             z = pos.z_val + r * np.sin(theta)  # -ve because Unreal has -ve z direction going upwards
 
-            self.client.simSetVehiclePose(airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
-                                     ignore_collison=ignore_collision, vehicle_name=self.vehicle_name)
-        elif SimMode == 'Multirotor':
+            self.client.simSetVehiclePose(
+                airsim.Pose(airsim.Vector3r(x, y, z), airsim.to_quaternion(0, 0, alpha + psi)),
+                ignore_collison=ignore_collision, vehicle_name=self.vehicle_name)
+        elif Mode == 'dynamic':
             r_infer = 0.4
             vx = r_infer * np.cos(alpha + psi)
             vy = r_infer * np.sin(alpha + psi)
@@ -78,17 +85,13 @@ class PedraAgent():
             # TODO
             # Take average of previous velocities and current to smoothen out drone movement.
             self.client.moveByVelocityAsync(vx=vx, vy=vy, vz=vz, duration=1,
-                                       drivetrain=airsim.DrivetrainType.MaxDegreeOfFreedom,
-                                       yaw_mode=airsim.YawMode(is_rate=False,
-                                                               yaw_or_rate=180 * (alpha + psi) / np.pi), vehicle_name = self.vehicle_name)
+                                            drivetrain=airsim.DrivetrainType.MaxDegreeOfFreedom,
+                                            yaw_mode=airsim.YawMode(is_rate=False,
+                                                                    yaw_or_rate=180 * (alpha + psi) / np.pi),
+                                            vehicle_name=self.vehicle_name)
             time.sleep(0.07)
             self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=1, vehicle_name=self.vehicle_name)
-            # print("")
-            # print("Throttle:", throttle)
-            # print('Yaw:', yaw)
 
-            # self.client.moveByAngleThrottleAsync(pitch=-0.015, roll=0, throttle=throttle, yaw_rate=yaw, duration=0.2).join()
-            # self.client.moveByVelocityAsync(vx=0, vy=0, vz=0, duration=0.005)
 
     def get_CustomDepth(self, cfg):
         camera_name = 2

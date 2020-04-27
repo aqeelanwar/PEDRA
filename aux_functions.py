@@ -192,6 +192,61 @@ def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, a
     err=abs(TD) # or abs(TD_clip)
     return curr_states, Q_target, actions, err, idx
 
+def policy_REINFORCE(curr_state, agent):
+    action = agent.network_model.action_selection(curr_state)
+    action_type = 'Prob'
+    return action[0], action_type
+
+def train_REINFORCE(data_tuple, batch_size, agent, lr, input_size, gamma, epi_num):
+    episode_len = len(data_tuple)
+
+    curr_states = np.zeros(shape=(episode_len, input_size, input_size, 3))
+    actions = np.zeros(shape=(episode_len), dtype=int)
+    crashes = np.zeros(shape=(episode_len))
+    rewards = np.zeros(shape=episode_len)
+
+    for ii, m in enumerate(data_tuple):
+        curr_state_m, action_m, reward_m, crash_m = m
+        curr_states[ii, :, :, :] = curr_state_m[...]
+        actions[ii] = action_m
+        rewards[ii] = reward_m
+        crashes[ii] = crash_m
+
+    Gs = np.zeros(episode_len)
+    r = 0
+    for episode_step in range(episode_len - 1, -1, -1):
+        r = rewards[episode_step] + r * gamma
+        Gs[episode_step] = r
+
+    # Normalize the reward to reduce variance in training
+    Gs -= np.mean(Gs)
+    Gs /= (np.std(Gs) + 1e-8)
+
+    num_batches = int(np.ceil(episode_len / batch_size))
+    for i in range(num_batches):
+        if i != num_batches - 1:
+            x = curr_states[i * batch_size:(i + 1) * batch_size, :, :, :]
+            G = Gs[i * batch_size:(i + 1) * batch_size]
+            action = actions[i * batch_size:(i + 1) * batch_size]
+        else:
+            x = curr_states[i * batch_size:, :, :, :]
+            G = Gs[i * batch_size:]
+            action = actions[i * batch_size:]
+
+        G = np.array([G])
+        G = G.T
+
+        # Restructure array
+        action = np.array([action])
+        action = action.T
+
+        # Get the baseline value
+        B = agent.network_model.get_baseline(x)
+        # Train the baseline network
+        B_ = agent.network_model.train_baseline(x, G, action, lr, epi_num)
+        # Train policy network
+        agent.network_model.train_policy(x, action, B, G, lr, epi_num)
+
 
 def policy(epsilon, curr_state, iter, b, epsilon_model, wait_before_train, num_actions, agent):
     qvals=[]
@@ -231,32 +286,25 @@ def print_orderly(str, n):
     hyphens = '-' * int((n - len(str)) / 2)
     print(hyphens + ' ' + str + ' ' + hyphens)
 
-def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1):
+def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1, client=[]):
+    if client != []:
+        client.reset()
     print_orderly('Drone', 80)
     client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
     client.confirmConnection()
-    # old_posit = client.simGetVehiclePose()
-    # if phase == 'train':
-    #     client.simSetVehiclePose(
-    #         airsim.Pose(airsim.Vector3r(0, 0, 0), old_posit.orientation),
-    #         ignore_collison=True)
-    # elif phase == 'infer':
+    time.sleep(1)
 
-
-    # print("Yes")
     old_posit = {}
     for agents in range(num_agents):
-        name_agent = "drone"+ str(agents)
+        name_agent = "drone" + str(agents)
         client.enableApiControl(True, name_agent)
         client.armDisarm(True, name_agent)
-        client.takeoffAsync(vehicle_name=name_agent).join()
+        # time.sleep(1)
+        client.takeoffAsync(vehicle_name=name_agent)
+        time.sleep(1)
         old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
 
     initZ = old_posit[name_agent].position.z_val
-
-    # client.enableApiControl(True)
-    # client.armDisarm(True)
-    # client.takeoffAsync().join()
 
     return client, old_posit, initZ
 

@@ -2,84 +2,6 @@ import tensorflow as tf
 import numpy as np
 from network.loss_functions import huber_loss
 
-
-class AlexNetDuel(object):
-
-    def __init__(self, x, num_actions, train_type):
-        self.x = x
-        weights_path = 'models/imagenet.npy'
-        weights = np.load(open(weights_path, "rb"), encoding="latin1").item()
-        # print('Loading imagenet weights for the conv layers and random for fc layers')
-        train_conv = True
-        train_fc6 = True
-        train_fc7 = True
-        train_fc8 = True
-        train_fc9 = True
-
-        if train_type == 'last4':
-            train_conv = False
-            train_fc6 = False
-        elif train_type == 'last3':
-            train_conv = False
-            train_fc6 = False
-            train_fc7 = False
-        elif train_type == 'last2':
-            train_conv = False
-            train_fc6 = False
-            train_fc7 = False
-            train_fc8 = False
-
-        self.conv1 = self.conv(self.x, weights["conv1"][0], np.random.normal(0,1)*weights["conv1"][1], k=11, out=96, s=4, p="VALID",trainable=train_conv)
-        self.maxpool1 = tf.nn.max_pool(self.conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
-
-        self.conv2 = self.conv(self.maxpool1, weights["conv2"][0], weights["conv2"][1], k=5, out=256, s=1, p="SAME",trainable=train_conv)
-        self.maxpool2 = tf.nn.max_pool(self.conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
-
-        self.conv3 = self.conv(self.maxpool2, weights["conv3"][0], weights["conv3"][1], k=3, out=384, s=1, p="SAME",trainable=train_conv)
-        self.conv4 = self.conv(self.conv3, weights["conv4"][0], weights["conv4"][1], k=3, out=384, s=1, p="SAME",trainable=train_conv)
-        self.conv5 = self.conv(self.conv4, weights["conv5"][0], weights["conv5"][1], k=3, out=256, s=1, p="SAME",trainable=train_conv)
-        self.maxpool5 = tf.nn.max_pool(self.conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
-
-        self.flat = tf.contrib.layers.flatten(self.maxpool5)
-
-        # Advantage Network
-        self.fc6_a = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
-        self.fc7_a = self.FullyConnected(self.fc6_a,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
-        self.fc8_a = self.FullyConnected(self.fc7_a,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
-        self.fc9_a = self.FullyConnected(self.fc8_a,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
-        self.fc10_a = self.FullyConnected(self.fc9_a,   units_in=512,  units_out=num_actions, act='linear', trainable=True)
-
-        # Value Network
-        self.fc6_v = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
-        self.fc7_v = self.FullyConnected(self.fc6_v,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
-        self.fc8_v = self.FullyConnected(self.fc7_v,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
-        self.fc9_v = self.FullyConnected(self.fc8_v,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
-        self.fc10_v = self.FullyConnected(self.fc9_v,   units_in=512,  units_out=1, act='linear', trainable=True)
-
-        self.output = self.fc10_v + tf.subtract(self.fc10_a, tf.reduce_mean(self.fc10_a, axis=1, keep_dims=True))
-
-
-    def conv(self, input, W, b, k, out, s, p, trainable=True):
-        assert (W.shape[0] == k)
-        assert (W.shape[1] == k)
-        assert (W.shape[3] == out)
-
-        conv_kernel_1 = tf.nn.conv2d(input, tf.Variable(W, trainable), [1, s, s, 1], padding=p)
-        bias_layer_1 = tf.nn.bias_add(conv_kernel_1, tf.Variable(b, trainable))
-
-        return tf.nn.relu(bias_layer_1)
-
-    def FullyConnected(self, input, units_in, units_out, act, trainable=True):
-        W = tf.Variable(tf.truncated_normal(shape=(units_in, units_out), stddev=0.05), trainable=trainable)
-        b = tf.Variable(tf.truncated_normal(shape=[units_out], stddev=0.05), trainable=trainable)
-
-        if act == 'relu':
-            return tf.nn.relu_layer(input, W,b)
-        elif act == 'linear':
-            return tf.nn.xw_plus_b(input, W, b)
-        else:
-            assert (1 == 0)
-
 class C3F2(object):
 
     def __init__(self, x, num_actions, train_type):
@@ -140,6 +62,77 @@ class C3F2(object):
             return tf.nn.relu_layer(input, W,b)
         elif act == 'linear':
             return tf.nn.xw_plus_b(input, W, b)
+        else:
+            assert (1 == 0)
+
+class C3F2_REINFORCE_with_baseline(object):
+
+    def __init__(self, x, num_actions, train_type):
+        self.x = x
+        train_conv = True
+        train_fc6 = True
+        train_fc7 = True
+        train_fc8 = True
+        train_fc9 = True
+
+        if train_type == 'last4':
+            train_conv = False
+            train_fc6 = False
+        elif train_type == 'last3':
+            train_conv = False
+            train_fc6 = False
+            train_fc7 = False
+        elif train_type == 'last2':
+            train_conv = False
+            train_fc6 = False
+            train_fc7 = False
+            train_fc8 = False
+
+        self.conv1 = self.conv(self.x, k=7, out=96, s=4, p="VALID", trainable=train_conv)
+        self.maxpool1 = tf.nn.max_pool(self.conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
+
+        self.conv2 = self.conv(self.maxpool1, k=5, out=64, s=1, p="VALID", trainable=train_conv)
+        self.maxpool2 = tf.nn.max_pool(self.conv2, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding="VALID")
+
+        self.conv3 = self.conv(self.maxpool2, k=3, out=64, s=1, p="SAME", trainable=train_conv)
+
+        self.flat = tf.contrib.layers.flatten(self.conv3)
+
+        # Main Network
+        self.fc1 = self.FullyConnected(self.flat, units_in=1024, units_out=1024, act='relu', trainable=train_fc6)
+        self.fc2 = self.FullyConnected(self.fc1, units_in=1024, units_out=num_actions, act='softmax',
+                                       trainable=train_fc7)
+
+        # Baseline Network
+        self.fc1_baseline = self.FullyConnected(self.flat, units_in=1024, units_out=1024, act='relu',
+                                                trainable=train_fc6)
+        self.fc2_baseline = self.FullyConnected(self.fc1_baseline, units_in=1024, units_out=1, act='linear',
+                                                trainable=train_fc7)
+
+        self.output = self.fc2
+        self.baseline = self.fc2_baseline
+
+    def conv(self, input, k, out, s, p, trainable=True):
+
+        W = tf.Variable(tf.truncated_normal(shape=(k, k, int(input.shape[3]), out), stddev=0.05 / 10, seed=1),
+                        trainable=trainable)
+        b = tf.Variable(tf.truncated_normal(shape=[out], stddev=0.05 / 10, seed=1), trainable=trainable)
+
+        conv_kernel_1 = tf.nn.conv2d(input, W, [1, s, s, 1], padding=p)
+        bias_layer_1 = tf.nn.bias_add(conv_kernel_1, tf.Variable(b, trainable))
+
+        return tf.nn.relu(bias_layer_1)
+
+    def FullyConnected(self, input, units_in, units_out, act, trainable=True):
+        W = tf.Variable(tf.truncated_normal(shape=(units_in, units_out), stddev=0.05 / 10, seed=1), trainable=trainable)
+        b = tf.Variable(tf.truncated_normal(shape=[units_out], stddev=0.05 / 10, seed=1), trainable=trainable)
+
+        if act == 'relu':
+            return tf.nn.relu_layer(input, W, b)
+        elif act == 'linear':
+            return tf.nn.xw_plus_b(input, W, b)
+        elif act == 'softmax':
+            return tf.nn.softmax(tf.nn.xw_plus_b(input, W, b))
         else:
             assert (1 == 0)
 
@@ -237,9 +230,82 @@ class AlexNetConditional(object):
         else:
             assert (1 == 0)
 
+class AlexNetDuel(object):
+
+    def __init__(self, x, num_actions, train_type):
+        self.x = x
+        weights_path = 'models/imagenet.npy'
+        weights = np.load(open(weights_path, "rb"), encoding="latin1").item()
+        # print('Loading imagenet weights for the conv layers and random for fc layers')
+        train_conv = True
+        train_fc6 = True
+        train_fc7 = True
+        train_fc8 = True
+        train_fc9 = True
+
+        if train_type == 'last4':
+            train_conv = False
+            train_fc6 = False
+        elif train_type == 'last3':
+            train_conv = False
+            train_fc6 = False
+            train_fc7 = False
+        elif train_type == 'last2':
+            train_conv = False
+            train_fc6 = False
+            train_fc7 = False
+            train_fc8 = False
+
+        self.conv1 = self.conv(self.x, weights["conv1"][0], np.random.normal(0,1)*weights["conv1"][1], k=11, out=96, s=4, p="VALID",trainable=train_conv)
+        self.maxpool1 = tf.nn.max_pool(self.conv1, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
+
+        self.conv2 = self.conv(self.maxpool1, weights["conv2"][0], weights["conv2"][1], k=5, out=256, s=1, p="SAME",trainable=train_conv)
+        self.maxpool2 = tf.nn.max_pool(self.conv2, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
+
+        self.conv3 = self.conv(self.maxpool2, weights["conv3"][0], weights["conv3"][1], k=3, out=384, s=1, p="SAME",trainable=train_conv)
+        self.conv4 = self.conv(self.conv3, weights["conv4"][0], weights["conv4"][1], k=3, out=384, s=1, p="SAME",trainable=train_conv)
+        self.conv5 = self.conv(self.conv4, weights["conv5"][0], weights["conv5"][1], k=3, out=256, s=1, p="SAME",trainable=train_conv)
+        self.maxpool5 = tf.nn.max_pool(self.conv5, ksize=[1, 3, 3, 1], strides=[1, 2, 2, 1], padding="VALID")
+
+        self.flat = tf.contrib.layers.flatten(self.maxpool5)
+
+        # Advantage Network
+        self.fc6_a = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc7_a = self.FullyConnected(self.fc6_a,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
+        self.fc8_a = self.FullyConnected(self.fc7_a,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
+        self.fc9_a = self.FullyConnected(self.fc8_a,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
+        self.fc10_a = self.FullyConnected(self.fc9_a,   units_in=512,  units_out=num_actions, act='linear', trainable=True)
+
+        # Value Network
+        self.fc6_v = self.FullyConnected(self.flat,     units_in=1024, units_out=2048, act='relu', trainable=train_fc6)
+        self.fc7_v = self.FullyConnected(self.fc6_v,    units_in=2048, units_out=1024, act='relu', trainable=train_fc7)
+        self.fc8_v = self.FullyConnected(self.fc7_v,    units_in=1024, units_out=1024, act='relu', trainable=train_fc8)
+        self.fc9_v = self.FullyConnected(self.fc8_v,    units_in=1024, units_out=512, act='relu', trainable=train_fc9)
+        self.fc10_v = self.FullyConnected(self.fc9_v,   units_in=512,  units_out=1, act='linear', trainable=True)
+
+        self.output = self.fc10_v + tf.subtract(self.fc10_a, tf.reduce_mean(self.fc10_a, axis=1, keep_dims=True))
 
 
+    def conv(self, input, W, b, k, out, s, p, trainable=True):
+        assert (W.shape[0] == k)
+        assert (W.shape[1] == k)
+        assert (W.shape[3] == out)
 
+        conv_kernel_1 = tf.nn.conv2d(input, tf.Variable(W, trainable), [1, s, s, 1], padding=p)
+        bias_layer_1 = tf.nn.bias_add(conv_kernel_1, tf.Variable(b, trainable))
+
+        return tf.nn.relu(bias_layer_1)
+
+    def FullyConnected(self, input, units_in, units_out, act, trainable=True):
+        W = tf.Variable(tf.truncated_normal(shape=(units_in, units_out), stddev=0.05), trainable=trainable)
+        b = tf.Variable(tf.truncated_normal(shape=[units_out], stddev=0.05), trainable=trainable)
+
+        if act == 'relu':
+            return tf.nn.relu_layer(input, W,b)
+        elif act == 'linear':
+            return tf.nn.xw_plus_b(input, W, b)
+        else:
+            assert (1 == 0)
 
 class AlexNetDuelPrune(object):
 
@@ -318,10 +384,6 @@ class AlexNetDuelPrune(object):
             return tf.nn.xw_plus_b(input, W, b)
         else:
             assert (1 == 0)
-
-
-
-
 
 class AlexNet(object):
 
