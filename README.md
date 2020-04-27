@@ -149,11 +149,6 @@ This config file is used to set high-level simulation parameters. The complete l
 | ip_address        | IP address used to communicate between PEDRA and the environment                                                       | e.g. 127.0.0.1                     |
 | algorithm         | The algorithm that needs to be implemented. Details in PEDRA/algorithms/readme.md   | e.g. DeepQLearning                |
 | mode                 | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
-| SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
-| drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
-| ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
-| num_agents        | Number of drones/agents to be used in the simulation         | Any integer > 0                    |
-
 #### Drone Parameters [drone_params]:
 
 | Parameter            | Explanation                                                                          | Possible values                      |
@@ -222,7 +217,7 @@ PEDRA comes equip with 3 drones
 3. DJIPhantom
 
 The images of these drones can be seen below.
-![drone_types](/images/drone_types.png)
+![drone_types](images/drone_types.png)
 Different action space can be associated with each of these drones. The config file can be used to select one of these drones.
 
 
