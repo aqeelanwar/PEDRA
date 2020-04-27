@@ -14,25 +14,23 @@ from util.transformations import euler_from_quaternion
 from configs.read_cfg import read_cfg, update_algorithm_cfg
 
 
-def DeepQLearning(cfg, env_process, env_folder):
-    algorithm_cfg = read_cfg(config_filename='configs/DeepQLearning.cfg', verbose=True)
+def DeepREINFORCE(cfg, env_process, env_folder):
+    algorithm_cfg = read_cfg(config_filename='configs/DeepREINFORCE.cfg', verbose=True)
     algorithm_cfg.algorithm = cfg.algorithm
 
     if 'GlobalLearningGlobalUpdate-SA' in algorithm_cfg.distributed_algo:
         # algorithm_cfg = update_algorithm_cfg(algorithm_cfg, cfg)
         cfg.num_agents = 1
-
-    # # Start the environment
-    # env_process, env_folder = start_environment(env_name=cfg.env_name)
+    client = []
     # Connect to Unreal Engine and get the drone handle: client
-    client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode, num_agents=cfg.num_agents)
+    client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode, num_agents=cfg.num_agents,
+                                             client=client)
     initial_pos = old_posit.copy()
     # Load the initial positions for the environment
     reset_array, reset_array_raw, level_name, crash_threshold = initial_positions(cfg.env_name, initZ, cfg.num_agents)
 
     # Initialize System Handlers
     process = psutil.Process(getpid())
-    # nvidia_smi.nvmlInit()
 
     # Load PyGame Screen
     screen = pygame_connect(phase=cfg.mode)
@@ -46,29 +44,27 @@ def DeepQLearning(cfg, env_process, env_folder):
     new_state = {}
     posit = {}
     name_agent_list = []
+    data_tuple = {}
     agent = {}
-    # Replay Memory for RL
+    epi_num = {}
+
     if cfg.mode == 'train':
-        ReplayMemory = {}
-        target_agent = {}
 
         if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
             print_orderly('global', 40)
             # Multiple agent acts as data collecter and one global learner
             global_agent = PedraAgent(algorithm_cfg, client, name='DQN', vehicle_name='global')
-            ReplayMemory = Memory(algorithm_cfg.buffer_len)
-            target_agent = PedraAgent(algorithm_cfg, client, name='Target', vehicle_name='global')
 
         for drone in range(cfg.num_agents):
             name_agent = "drone" + str(drone)
+
+            epi_num[name_agent] = 1
+            data_tuple[name_agent] = []
             name_agent_list.append(name_agent)
             print_orderly(name_agent, 40)
             # TODO: turn the neural network off if global agent is present
             agent[name_agent] = PedraAgent(algorithm_cfg, client, name='DQN', vehicle_name=name_agent)
 
-            if algorithm_cfg.distributed_algo != 'GlobalLearningGlobalUpdate-MA':
-                ReplayMemory[name_agent] = Memory(algorithm_cfg.buffer_len)
-                target_agent[name_agent] = PedraAgent(algorithm_cfg, client, name='Target', vehicle_name=name_agent)
             current_state[name_agent] = agent[name_agent].get_state()
 
     elif cfg.mode == 'infer':
@@ -135,7 +131,16 @@ def DeepQLearning(cfg, env_process, env_folder):
         print("Log path: ", log_path)
         log_files[name_agent] = open(log_path, 'w')
 
+    # switch_env = False
+
     print_orderly('Simulation begins', 80)
+
+    # save_posit = old_posit
+
+    # last_crash_array = np.zeros(shape=len(level_name), dtype=np.int32)
+    # ret_array = np.zeros(shape=len(level_name))
+    # distance_array = np.zeros(shape=len(level_name))
+    # epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
 
     while active:
         try:
@@ -188,27 +193,20 @@ def DeepQLearning(cfg, env_process, env_folder):
                             # TODO: policy from one global agent: DONE
                             if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
                                 agent_this_drone = global_agent
-                                ReplayMemory_this_drone = ReplayMemory
-                                target_agent_this_drone = target_agent
                             else:
                                 agent_this_drone = agent[name_agent]
-                                ReplayMemory_this_drone = ReplayMemory[name_agent]
-                                target_agent_this_drone = target_agent[name_agent]
 
-                            action, action_type, algorithm_cfg.epsilon, qvals = policy(algorithm_cfg.epsilon,
-                                                                                       current_state[name_agent], iter,
-                                                                                       algorithm_cfg.epsilon_saturation,
-                                                                                       algorithm_cfg.epsilon_model,
-                                                                                       algorithm_cfg.wait_before_train,
-                                                                                       algorithm_cfg.num_actions,
-                                                                                       agent_this_drone)
-
+                            action, action_type = policy_REINFORCE(current_state[name_agent], agent_this_drone)
+                            # print('Evaluated Policy')
                             action_word = translate_action(action, algorithm_cfg.num_actions)
                             # Take the action
+                            # agent[name_agent].take_action(action, algorithm_cfg.num_actions, SimMode=cfg.SimMode)
                             agent[name_agent].take_action(action, algorithm_cfg.num_actions, Mode='static')
-                            # time.sleep(0.05)
+                            # print('Took Action')
                             new_state[name_agent] = agent[name_agent].get_state()
+                            # print('got state')
                             new_depth1, thresh = agent[name_agent].get_CustomDepth(cfg)
+                            # print('Got state')
 
                             # Get GPS information
                             posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
@@ -220,59 +218,80 @@ def DeepQLearning(cfg, env_process, env_folder):
                             # calculate distance
                             distance[name_agent] = distance[name_agent] + np.linalg.norm(new_p - old_p)
                             old_posit[name_agent] = posit[name_agent]
-
+                            # print('calculated distance')
                             reward, crash = agent[name_agent].reward_gen(new_depth1, action, crash_threshold, thresh,
                                                                          debug, cfg)
 
                             ret[name_agent] = ret[name_agent] + reward
                             agent_state = agent[name_agent].GetAgentState()
+                            # print('generated reward')
 
-                            if agent_state.has_collided or distance[name_agent] < 0.1:
+                            if agent_state.has_collided or distance[name_agent] < 0.01:
                                 num_collisions[name_agent] = num_collisions[name_agent] + 1
-                                print('crash')
+                                if agent_state.has_collided:
+                                    print('Crash: Collision detected from environment')
+                                else:
+                                    print('Crash: Collision detected from distance')
                                 crash = True
                                 reward = -1
-                            data_tuple = []
-                            data_tuple.append([current_state[name_agent], action, new_state[name_agent], reward, crash])
-                            # TODO: one replay memory global, target_agent, agent: DONE
-                            err = get_errors(data_tuple, choose, ReplayMemory_this_drone, algorithm_cfg.input_size,
-                                             agent_this_drone, target_agent_this_drone, algorithm_cfg.gamma,
-                                             algorithm_cfg.Q_clip)
-                            ReplayMemory_this_drone.add(err, data_tuple)
 
-                            # Train if sufficient frames have been stored
-                            if iter > algorithm_cfg.wait_before_train:
-                                if iter % algorithm_cfg.train_interval == 0:
-                                    # Train the RL network
-                                    old_states, Qvals, actions, err, idx = minibatch_double(data_tuple,
-                                                                                            algorithm_cfg.batch_size,
-                                                                                            choose,
-                                                                                            ReplayMemory_this_drone,
-                                                                                            algorithm_cfg.input_size,
-                                                                                            agent_this_drone,
-                                                                                            target_agent_this_drone,
-                                                                                            algorithm_cfg.gamma,
-                                                                                            algorithm_cfg.Q_clip)
-                                    # TODO global replay memory: DONE
-                                    for i in range(algorithm_cfg.batch_size):
-                                        ReplayMemory_this_drone.update(idx[i], err[i])
+                            data_tuple[name_agent].append([current_state[name_agent], action, reward, crash])
 
-                                    if print_qval:
-                                        print(Qvals)
-                                    # TODO global agent, target_agent: DONE
-                                    if choose:
-                                        # Double-DQN
-                                        target_agent_this_drone.network_model.train_n(old_states, Qvals, actions,
-                                                                                      algorithm_cfg.batch_size,
-                                                                                      algorithm_cfg.dropout_rate,
-                                                                                      algorithm_cfg.learning_rate,
-                                                                                      algorithm_cfg.epsilon, iter)
-                                    else:
-                                        agent_this_drone.network_model.train_n(old_states, Qvals, actions,
-                                                                               algorithm_cfg.batch_size,
-                                                                               algorithm_cfg.dropout_rate,
-                                                                               algorithm_cfg.learning_rate,
-                                                                               algorithm_cfg.epsilon, iter)
+                            # Train if episode ends
+                            if crash:
+
+                                if distance[name_agent] < 0.01:
+                                    # Drone won't move, reconnect
+                                    print('Recovering from drone mobility issue')
+
+                                    agent[name_agent].client, old_posit, initZ = connect_drone(
+                                        ip_address=cfg.ip_address, phase=cfg.mode,
+                                        num_agents=cfg.num_agents, client=client)
+                                else:
+                                    agent[name_agent].network_model.log_to_tensorboard(tag='Return',
+                                                                                       group=name_agent,
+                                                                                       value=ret[name_agent],
+                                                                                       index=epi_num[name_agent])
+
+                                    agent[name_agent].network_model.log_to_tensorboard(tag='Safe Flight',
+                                                                                       group=name_agent,
+                                                                                       value=distance[name_agent],
+                                                                                       index=epi_num[name_agent])
+
+                                    agent[name_agent].network_model.log_to_tensorboard(tag='Episode Length',
+                                                                                       group=name_agent,
+                                                                                       value=len(
+                                                                                           data_tuple[name_agent]),
+                                                                                       index=epi_num[name_agent])
+
+                                    # Train episode
+                                    train_REINFORCE(data_tuple[name_agent], algorithm_cfg.batch_size, agent_this_drone,
+                                                    algorithm_cfg.learning_rate, algorithm_cfg.input_size,
+                                                    algorithm_cfg.gamma, epi_num[name_agent])
+                                    c = agent_this_drone.network_model.get_vars()[15]
+                                    agent_this_drone.network_model.log_to_tensorboard(tag='weight', group=name_agent,
+                                                                                      value=c[0],
+                                                                                      index=epi_num[name_agent])
+
+                                    data_tuple[name_agent] = []
+                                    epi_num[name_agent] += 1
+                                    ret[name_agent] = 0
+                                    distance[name_agent] = 0
+                                    last_crash[name_agent] = 0
+
+                                    # print('train done, now reset')
+                                    reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
+                                    # time.sleep(0.2)
+                                    current_state[name_agent] = agent[name_agent].get_state()
+                                    old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
+
+                                    if epi_num[name_agent] % 100 == 0:
+                                        agent_this_drone.network_model.save_network(algorithm_cfg.network_path,
+                                                                                    epi_num[name_agent])
+
+
+                            else:
+                                current_state[name_agent] = new_state[name_agent]
 
                             time_exec = time.time() - start_time
                             gpu_memory, gpu_utilization, sys_memory = get_SystemStats(process, cfg.NVIDIA_GPU)
@@ -280,24 +299,23 @@ def DeepQLearning(cfg, env_process, env_folder):
                             for i in range(0, len(gpu_memory)):
                                 tag_mem = 'GPU' + str(i) + '-Memory-GB'
                                 tag_util = 'GPU' + str(i) + 'Utilization-%'
-                                agent[name_agent].network_model.log_to_tensorboard(tag=tag_mem, group='SystemStats',
-                                                                                   value=gpu_memory[i],
-                                                                                   index=iter)
-                                agent[name_agent].network_model.log_to_tensorboard(tag=tag_util, group='SystemStats',
-                                                                                   value=gpu_utilization[i],
-                                                                                   index=iter)
-                            agent[name_agent].network_model.log_to_tensorboard(tag='Memory-GB', group='SystemStats',
-                                                                               value=sys_memory,
-                                                                               index=iter)
+                                agent_this_drone.network_model.log_to_tensorboard(tag=tag_mem, group='SystemStats',
+                                                                                  value=gpu_memory[i],
+                                                                                  index=iter)
+                                agent_this_drone.network_model.log_to_tensorboard(tag=tag_util, group='SystemStats',
+                                                                                  value=gpu_utilization[i],
+                                                                                  index=iter)
+                            agent_this_drone.network_model.log_to_tensorboard(tag='Memory-GB', group='SystemStats',
+                                                                              value=sys_memory,
+                                                                              index=iter)
 
-                            s_log = '{:<6s} - Level {:>2d} - Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} Eps: {:<1.4f} lr: {:>1.8f} Ret = {:<+6.4f} Last Crash = {:<5d} t={:<1.3f} SF = {:<5.4f}  Reward: {:<+1.4f}  '.format(
+                            s_log = '{:<6s} - Level {:>2d} - Iter: {:>6d}/{:<5d} {:<8s}-{:>5s} lr: {:>1.8f} Ret = {:>+6.4f} Last Crash = {:<5d} t={:<1.3f} SF = {:<5.4f}  Reward: {:<+1.4f}  '.format(
                                 name_agent,
                                 int(level[name_agent]),
                                 iter,
-                                episode[name_agent],
+                                epi_num[name_agent],
                                 action_word,
                                 action_type,
-                                algorithm_cfg.epsilon,
                                 algorithm_cfg.learning_rate,
                                 ret[name_agent],
                                 last_crash[name_agent],
@@ -315,58 +333,9 @@ def DeepQLearning(cfg, env_process, env_folder):
                                                                   np.squeeze(new_state[name_agent], axis=0))))
                                 cv2.waitKey(1)
 
-                            if crash:
-                                if distance[name_agent] < 0.01:
-                                    # Drone won't move, reconnect
-                                    print('Recovering from drone mobility issue')
-
-                                    agent[name_agent].client, old_posit, initZ = connect_drone(
-                                        ip_address=cfg.ip_address, phase=cfg.mode,
-                                        num_agents=cfg.num_agents, client=client)
-                                else:
-
-                                    agent[name_agent].network_model.log_to_tensorboard(tag='Return', group=name_agent,
-                                                                                       value=ret[name_agent],
-                                                                                       index=episode[name_agent])
-                                    agent[name_agent].network_model.log_to_tensorboard(tag='Safe Flight',
-                                                                                       group=name_agent,
-                                                                                       value=distance[name_agent],
-                                                                                       index=episode[name_agent])
-
-                                    ret[name_agent] = 0
-                                    distance[name_agent] = 0
-                                    episode[name_agent] = episode[name_agent] + 1
-                                    last_crash[name_agent] = 0
-
-                                    reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
-                                    # time.sleep(0.2)
-                                    current_state[name_agent] = agent[name_agent].get_state()
-                                    old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
-                            else:
-                                current_state[name_agent] = new_state[name_agent]
-
-                            if iter % algorithm_cfg.max_iters == 0:
+                            if epi_num[name_agent] % algorithm_cfg.total_episodes == 0:
+                                print(automate)
                                 automate = False
-
-                    # TODO define and state agents
-                    if iter % algorithm_cfg.update_target_interval == 0 and iter > algorithm_cfg.wait_before_train:
-
-                        if algorithm_cfg.distributed_algo == 'GlobalLearningGlobalUpdate-MA':
-                            print('global' + ' - Switching Target Network')
-                            global_agent.network_model.save_network(algorithm_cfg.network_path, episode[name_agent])
-                        else:
-                            for name_agent in name_agent_list:
-                                agent[name_agent].take_action([-1], algorithm_cfg.num_actions, Mode='static')
-                                print(name_agent + ' - Switching Target Network')
-                                agent[name_agent].network_model.save_network(algorithm_cfg.network_path,
-                                                                             episode[name_agent])
-
-                        choose = not choose
-
-                    # if iter % algorithm_cfg.communication_interval == 0 and iter > algorithm_cfg.wait_before_train:
-                    #     print('Communicating the weights and averaging them')
-                    #     communicate_across_agents(agent, name_agent_list, algorithm_cfg)
-                    #     communicate_across_agents(target_agent, name_agent_list, algorithm_cfg)
 
                     iter += 1
 
@@ -416,14 +385,11 @@ def DeepQLearning(cfg, env_process, env_folder):
                         fig_z.canvas.flush_events()
 
                         current_state[name_agent] = agent[name_agent].get_state()
-                        action, action_type, algorithm_cfg.epsilon, qvals = policy(1, current_state[name_agent], iter,
-                                                                                   algorithm_cfg.epsilon_saturation,
-                                                                                   'inference',
-                                                                                   algorithm_cfg.wait_before_train,
-                                                                                   algorithm_cfg.num_actions,
-                                                                                   agent[name_agent])
+                        action, action_type = policy_REINFORCE(current_state[name_agent], agent[name_agent])
                         action_word = translate_action(action, algorithm_cfg.num_actions)
                         # Take continuous action
+                        # agent[name_agent].take_action(action, algorithm_cfg.num_actions, Mode='static')
+
                         agent[name_agent].take_action(action, algorithm_cfg.num_actions, Mode='static')
                         old_posit[name_agent] = posit[name_agent]
 
@@ -440,9 +406,10 @@ def DeepQLearning(cfg, env_process, env_folder):
         except Exception as e:
             if str(e) == 'cannot reshape array of size 1 into shape (0,0,3)':
                 print('Recovering from AirSim error')
-                client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode,
-                                                         num_agents=cfg.num_agents)
 
+                client, old_posit, initZ = connect_drone(ip_address=cfg.ip_address, phase=cfg.mode,
+                                                         num_agents=cfg.num_agents, client=client)
+                time.sleep(2)
                 agent[name_agent].client = client
             else:
                 print('------------- Error -------------')
