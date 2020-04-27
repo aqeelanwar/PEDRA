@@ -39,8 +39,8 @@ The current version of PEDRA supports Windows and requires python3. It’s advis
 
 ## Clone the repository
 To make things simple and easier, PEDRA comes equip with two versions.
-* PEDRA: Single drone support:
-* D-PEDRA: Distributed multiple drones support
+* __PEDRA__: Single drone support:
+* __D-PEDRA__: Distributed multiple drones support
 
 Each of this version is a branch in the repository and can be downloaded as follows
 ```
