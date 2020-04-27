@@ -227,7 +227,7 @@ def DeepQLearning(cfg, env_process, env_folder):
                             ret[name_agent] = ret[name_agent] + reward
                             agent_state = agent[name_agent].GetAgentState()
 
-                            if agent_state.has_collided or distance[name_agent]<0.1:
+                            if agent_state.has_collided or distance[name_agent] < 0.1:
                                 num_collisions[name_agent] = num_collisions[name_agent] + 1
                                 print('crash')
                                 crash = True
@@ -316,22 +316,32 @@ def DeepQLearning(cfg, env_process, env_folder):
                                 cv2.waitKey(1)
 
                             if crash:
-                                agent[name_agent].network_model.log_to_tensorboard(tag='Return', group=name_agent,
-                                                                                   value=ret[name_agent],
-                                                                                   index=episode[name_agent])
-                                agent[name_agent].network_model.log_to_tensorboard(tag='Safe Flight', group=name_agent,
-                                                                                   value=distance[name_agent],
-                                                                                   index=episode[name_agent])
+                                if distance[name_agent] < 0.01:
+                                    # Drone won't move, reconnect
+                                    print('Recovering from drone mobility issue')
 
-                                ret[name_agent] = 0
-                                distance[name_agent] = 0
-                                episode[name_agent] = episode[name_agent] + 1
-                                last_crash[name_agent] = 0
+                                    agent[name_agent].client, old_posit, initZ = connect_drone(
+                                        ip_address=cfg.ip_address, phase=cfg.mode,
+                                        num_agents=cfg.num_agents, client=client)
+                                else:
 
-                                reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
-                                # time.sleep(0.2)
-                                current_state[name_agent] = agent[name_agent].get_state()
-                                old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
+                                    agent[name_agent].network_model.log_to_tensorboard(tag='Return', group=name_agent,
+                                                                                       value=ret[name_agent],
+                                                                                       index=episode[name_agent])
+                                    agent[name_agent].network_model.log_to_tensorboard(tag='Safe Flight',
+                                                                                       group=name_agent,
+                                                                                       value=distance[name_agent],
+                                                                                       index=episode[name_agent])
+
+                                    ret[name_agent] = 0
+                                    distance[name_agent] = 0
+                                    episode[name_agent] = episode[name_agent] + 1
+                                    last_crash[name_agent] = 0
+
+                                    reset_to_initial(level[name_agent], reset_array, client, vehicle_name=name_agent)
+                                    # time.sleep(0.2)
+                                    current_state[name_agent] = agent[name_agent].get_state()
+                                    old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
                             else:
                                 current_state[name_agent] = new_state[name_agent]
 
