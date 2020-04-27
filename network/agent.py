@@ -98,7 +98,6 @@ class PedraAgent():
             tries = 0
             correct = False
             while not correct and tries < max_tries:
-                # print('trying again to get depth')
                 tries += 1
                 responses = self.client.simGetImages(
                     [airsim.ImageRequest(camera_name, airsim.ImageType.DepthVis, False, False)],
