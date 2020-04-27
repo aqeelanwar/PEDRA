@@ -1,6 +1,6 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA-2.0)
-![Cover Photo](/images/pedra_cover.png)
-[![Watch the video](/images/pedra_intro.png)](https://www.youtube.com/watch?v=ivQkhl494Sc)
+![Cover Photo](../images/pedra_cover.png)
+[![Watch the video](../images/pedra_intro.png)](https://www.youtube.com/watch?v=ivQkhl494Sc)
 
 ## Updates in version 2.0:
 1. Support of multi-drone environments.
@@ -12,24 +12,24 @@ It is recommended to use version 2.0 of PEDRA due to improved stability. If you 
 
 The tutorial/guidelines to PEDRA is divided into 4 reamde files
 1. Main readme file (this one)
-2. [Environments readme file](/unreal_envs/readme.md)
-3. [Algorithms readme file](/algorithms/readme.md)
-4. [FAQ readme file](faq.md)
+2. [Environments readme file](../unreal_envs/readme.md)
+3. [Algorithms readme file](../algorithms/readme.md)
+4. [FAQ readme file](../faq.md)
 # What is PEDRA?
 PEDRA is a programmable engine for Drone Reinforcement Learning (RL) applications. The engine is developed in Python and is module-wise programmable. PEDRA is targeted mainly at goal-oriented RL problems for drones, but can also be extended to other problems such as SLAM etc. The engine interfaces with Unreal gaming engine using AirSim to create the complete platform. Figure below shows the complete block diagram of the engine. [Unreal engine](https://www.unrealengine.com/en-US/) is used to create 3D realistic environments for the drones to be trained in. Different level of details can be added to make the environment look as realistic or as required as possible. PEDRA comes equip with a list of 3D realistic environments that can be selected by user. Once the environment is selected, it is interfaced with PEDRA using using [AirSim](https://github.com/microsoft/AirSim). AirSim is an open source plugin developed by Microsoft that interfaces Unreal Engine with Python. It provides basic python functionalities controlling the sensory inputs and control signals of the drone. PEDRA is built onto the low level python modules provided by AirSim creating higher level python modules for the purpose of drone RL applications.
 
 
-![Cover Photo](/images/pedra_block.png)
+![Cover Photo](../images/pedra_block.png)
 
-![Cover Photo](/images/envs.png)
+![Cover Photo](../images/envs.png)
 
 
 
 # PEDRA Workflow
 The complete workflow of PEDRA can be seen in Figure below. The engine takes input from a config file (.cfg). This config file is used to define the problem and the algorithm for solving it. It is algorithmic specific and is used to define algorithm related parameters. Right now the supported problem is camera based autonomous navigation and the supported algorithms are single drone vanilla RL, single drone PER/DDQN based RL. More problems and associated algorithms are being added.
 The most important feature of PEDRA is the high level python modules that can be used as building blocks to implement multiple algorithms for drone oriented applications. The user can either select from the above mentioned algorithms, or can create their own using these building blocks. In case the user wants to define their own problem and associated algorithm, these building blocks can be used. Once these requirements are set, the simulation can begin. PyGame screen can be used to control simulation parameters such as pausing the simulation, modifying algorithmic or training parameters, overwrite config file and save the current state of the simulation etc.  PEDRA generates a number of output files. The log file keeps track of the simulation state per iteration listing useful algorithmic parameters. This is particularly useful when troubleshooting the simulation. Tensorboard can be used to visualize the training plots in run-time. These plots are particularly useful to monitor training parameters and to change the input parameters using the PyGame screen if need be.
-![Cover Photo](/images/pedra_workflow.png)
-![Cover Photo](/images/depth.gif)
+![Cover Photo](../images/pedra_workflow.png)
+![Cover Photo](../images/depth.gif)
 
 # Installing PEDRA
 The current version of PEDRA supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
