@@ -44,11 +44,11 @@ To make things simple and easier, PEDRA comes equip with two versions.
 
 Each of this version is a branch in the repository and can be downloaded as follows
 ```
-# PEDRA_SingleDrone
-git clone --single-branch --branch PEDRA_SingleDrone https://github.com/aqeelanwar/PEDRA.git
+# PEDRA Single drone
+git clone --single-branch --branch PEDRA https://github.com/aqeelanwar/PEDRA.git
 
-# PEDRA_MultipleDrones
-git clone --single-branch --branch PEDRA_MultipleDrones https://github.com/aqeelanwar/PEDRA.git
+# Distributed PEDRA MultipleDrones
+git clone --single-branch --branch D-PEDRA https://github.com/aqeelanwar/PEDRA.git
 ```
 
 
