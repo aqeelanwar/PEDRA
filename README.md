@@ -1,5 +1,5 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA-2.0)
-![Cover Photo](/images/pedra_cover.png)
+![Cover Photo](/images/PEDRA_cover.png)
 [![Watch the video](/images/pedra_intro.png)](https://www.youtube.com/watch?v=ivQkhl494Sc)
 
 ## Updates in version 2.0:
