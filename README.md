@@ -1,5 +1,5 @@
 # Programmable Engine for Drone Reinforcement Learning (RL) Applications (PEDRA-2.0)
-![Cover Photo](/images/PEDRA_cover.png)
+![Cover Photo](/images/pedra_cover.png)
 [![Watch the video](/images/pedra_intro.png)](https://www.youtube.com/watch?v=ivQkhl494Sc)
 
 ## Updates in version 2.0:
@@ -38,12 +38,16 @@ The most important feature of PEDRA is the high level python modules that can be
 The current version of PEDRA supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
 
 ## Clone the repository
-PEDRA comes in two versions, the single drone version PEDRA and multiple drones version D-PEDRA
+To make things simple and easier, PEDRA comes equip with two versions.
+* PEDRA_SingleDrone:
+* PEDRA_MultipleDrones
+
+Each of this version is a branch in the repository and can be downloaded as follows
 ```
-# Download PEDRA
+# PEDRA Single Drone
 git clone --single-branch --branch PEDRA https://github.com/aqeelanwar/PEDRA.git
 
-# Download D-PEDRA
+# Distributed PEDRA Multiple Drones
 git clone --single-branch --branch D-PEDRA https://github.com/aqeelanwar/PEDRA.git
 ```
 
@@ -137,14 +141,14 @@ This config file is used to set high-level simulation parameters. The complete l
 
 
 
-| Parameter        	| Explanation                                                                       	| Possible values                  	|
-|------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
-| run_name         	| Name for the current simulation                                                   	| Any value                       	|
-| custom_load      	| Dictates if user wants to load the network with custom weights                    	| True/False                       	|
-| custom_load_path 	| If custom_load is set to True, this dictates the path of the weights to be loaded 	| Relative path to weights         	|
-| env_type         	| Type of the environment (to be used in future versions)                           	| indoor/outdoor                   	|
-| env_name         	| Name of the environment to be used in the simulation                              	| indoor_cloud, indoor_techno etc. 	|
-| mode            	| Dictates the mode you want to run the simulation in                           	| train / infer / move_around                    	|
+| Parameter            | Explanation                                                                          | Possible values                      |
+|------------------    |-----------------------------------------------------------------------------------   |----------------------------------    |
+| run_name             | Name for the current simulation                                                      | Any value                        |
+| custom_load          | Dictates if user wants to load the network with custom weights                       | True/False                           |
+| custom_load_path     | If custom_load is set to True, this dictates the path of the weights to be loaded    | Relative path to weights             |
+| env_type             | Type of the environment (to be used in future versions)                              | indoor/outdoor                       |
+| env_name             | Name of the environment to be used in the simulation                                 | indoor_cloud, indoor_techno etc.     |
+| mode             | Dictates the mode you want to run the simulation in                              | train / infer / move_around                      |
 | SimMode           | Selects one of the two modes for the drone in the simulation                        | ComputerVision / Multirotor       |
 | drone             | Selects among the 3 drone models                                                    | ARDrone / DJIMavic, DJIPhantom    |
 | ClockSpeed        | Dictates the simulation speed                                                       | Any value > 0                     |
@@ -158,11 +162,11 @@ This config file is used to set high-level simulation parameters. The complete l
 
 
 
-| Parameter        	| Explanation                                                                       	| Possible values                  	|
-|------------------	|-----------------------------------------------------------------------------------	|----------------------------------	|
-| width         	  | Width of the camera frame                                                           | Any integer > 0                  	|
-| height      	    | Height of the camera frame                    	                                    | Any integer > 0                   |
-| fov_degrees 	    | Camera field of view in degrees                                                   | Any value >0                    	|
+| Parameter            | Explanation                                                                          | Possible values                      |
+|------------------    |-----------------------------------------------------------------------------------   |----------------------------------    |
+| width              | Width of the camera frame                                                           | Any integer > 0                      |
+| height           | Height of the camera frame                                                           | Any integer > 0                   |
+| fov_degrees      | Camera field of view in degrees                                                   | Any value >0                     |
 
 
 
@@ -300,3 +304,4 @@ archivePrefix = {arXiv},
 
 ## License
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details
+
