@@ -385,12 +385,7 @@ def DeepREINFORCE(cfg, env_process, env_folder):
                         fig_z.canvas.flush_events()
 
                         current_state[name_agent] = agent[name_agent].get_state()
-                        action, action_type, algorithm_cfg.epsilon, qvals = policy(1, current_state[name_agent], iter,
-                                                                                   algorithm_cfg.epsilon_saturation,
-                                                                                   'inference',
-                                                                                   algorithm_cfg.wait_before_train,
-                                                                                   algorithm_cfg.num_actions,
-                                                                                   agent[name_agent])
+                        action, action_type = policy_REINFORCE(current_state[name_agent], agent[name_agent])
                         action_word = translate_action(action, algorithm_cfg.num_actions)
                         # Take continuous action
                         # agent[name_agent].take_action(action, algorithm_cfg.num_actions, Mode='static')
