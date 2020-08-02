@@ -33,7 +33,7 @@ The most important feature of PEDRA is the high level python modules that can be
 ![Cover Photo](/images/depth.gif)
 
 # Installing PEDRA
-The current version of PEDRA supports Windows and requires python3. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
+The current version of PEDRA supports Windows and requires python3. Make sure to use python 3.6 to avoid issues during the installation of required packages. It’s advisable to [make a new virtual environment](https://towardsdatascience.com/setting-up-python-platform-for-machine-learning-projects-cfd85682c54b) for this project and install the dependencies. Following steps can be taken to download get started with PEDRA
 
 ## Clone the repository
 To make things simple and easier, PEDRA comes equip with two versions.
@@ -51,7 +51,7 @@ git clone --single-branch --branch D-PEDRA https://github.com/aqeelanwar/PEDRA.g
 
 
 ## Install required packages
-The provided requirements.txt file can be used to install all the required packages. Use the following command
+Make sure you use python 3.6, otheriwise the required packages installation might have issues. The provided requirements.txt file can be used to install all the required packages. Use the following command
 
 ### System with NVIDIA GPU
 ```
