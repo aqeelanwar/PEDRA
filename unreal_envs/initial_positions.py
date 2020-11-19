@@ -31,6 +31,7 @@ def indoor_meta():
 
                     # Five - VanLeer
                     [6400, -4731, 90],  # Player Start
+                    # [-3790, -5450, 180],
                     [5992, -2736, 180],
                     [8143, -2835, -90],
 
@@ -124,7 +125,7 @@ def indoor_vanleer():
     # The environment can be downloaded from
     # https://drive.google.com/drive/u/2/folders/1u5teth6l4JW2IXAkZAg1CbDGR6zE-v6Z
     orig_ip = [
-        [-3100, -4530, 90],  #Player Start
+        [-3790, -5450, 180], #Player Start
         [-1340, -2240, -90],
         [-3790, -5450, 180],
         [-3980, -1760, -90]

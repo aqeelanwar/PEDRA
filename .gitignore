@@ -4,6 +4,7 @@
 *.xml
 .idea/
 models/
-unreal_envs/*/
+pretrained_weights/*
+unreal_envs/*
 scratch.py
 

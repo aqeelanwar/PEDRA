@@ -96,7 +96,7 @@ if __name__ == '__main__':
     if can_proceed:
         # Start the environment
         env_process, env_folder = start_environment(env_name=cfg.env_name)
-        
+
         # If mode = move_around, don't initialize any algorithm
         if cfg.mode != 'move_around':
             algorithm = importlib.import_module('algorithms.'+cfg.algorithm)

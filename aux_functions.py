@@ -70,8 +70,8 @@ def start_environment(env_name):
     print_orderly('Environment', 80)
     env_folder = os.path.dirname(os.path.abspath(__file__)) + "/unreal_envs/" + env_name + "/"
     path = env_folder + env_name + ".exe"
-    # env_process = []
-    env_process = subprocess.Popen(path)
+    env_process = []
+    # env_process = subprocess.Popen(path)
     time.sleep(5)
     print("Successfully loaded environment: " + env_name)
 
@@ -185,6 +185,64 @@ def train_REINFORCE(data_tuple, batch_size, agent, lr, input_size, gamma, epi_nu
         agent.network_model.train_policy(x, action, B, G, lr, epi_num)
 
 
+def train_PPO(data_tuple_total, algorithm_cfg, agent, lr, input_size, gamma, epi_num):
+    batch_size = algorithm_cfg.batch_size
+    train_epoch_per_batch = algorithm_cfg.train_epoch_per_batch
+    lmbda = algorithm_cfg.lmbda
+    # # Divide the data tuple in PPO_steps
+    # ppo_steps = 3
+    # for i in range(int(np.ceil(len(data_tuple) / float(ppo_steps)))):
+    #     print(i)
+    #     start_ind = i * ppo_steps
+    #     end_ind = np.min((len(data_tuple), (i + 1) * ppo_steps))
+    #     data_sub = data_tuple[start_ind: end_ind]
+    #
+    #
+    episode_len_total = len(data_tuple_total)
+    num_batches = int(np.ceil(episode_len_total / float(batch_size)))
+    for i in range(num_batches):
+        start_ind = i * batch_size
+        end_ind = np.min((len(data_tuple_total), (i + 1) * batch_size))
+        data_tuple = data_tuple_total[start_ind: end_ind]
+        episode_len = len(data_tuple)
+
+        curr_states = np.zeros(shape=(episode_len, input_size, input_size, 3))
+        next_states = np.zeros(shape=(episode_len, input_size, input_size, 3))
+        actions = np.zeros(shape=(episode_len, 1), dtype=int)
+        crashes = np.zeros(shape=(episode_len, 1))
+        rewards = np.zeros(shape=(episode_len, 1))
+        p_a = np.zeros(shape=(episode_len,1))
+
+        for ii, m in enumerate(data_tuple):
+            curr_state_m, action_m, next_state_m, reward_m, p_a_m, crash_m = m
+            curr_states[ii, :, :, :] = curr_state_m[...]
+            next_states[ii, :, :, :] = next_state_m[...]
+            actions[ii] = action_m
+            rewards[ii] = reward_m
+            p_a[ii] = p_a_m
+            crashes[ii] = ~crash_m
+
+        for i in range(train_epoch_per_batch):
+            V_s = agent.network_model.get_state_value(curr_states)
+            V_s_ = agent.network_model.get_state_value(next_states)
+            TD_target = rewards + gamma*V_s_* crashes
+            delta = TD_target - V_s
+
+            GAE_array = []
+            GAE=0
+            for delta_t in delta[::-1]:
+                GAE = gamma*lmbda* GAE + delta_t
+                GAE_array.append(GAE)
+
+            GAE_array.reverse()
+            GAE = np.array(GAE_array)
+            # Normalize the reward to reduce variance in training
+            GAE -= np.mean(GAE)
+            GAE /= (np.std(GAE) + 1e-8)
+            # TODO: zero mean unit std GAE
+            agent.network_model.train_policy(curr_states, actions, TD_target, p_a, GAE, lr, epi_num)
+
+
 def minibatch_double(data_tuple, batch_size, choose, ReplayMemory, input_size, agent, target_agent, gamma, Q_clip):
     # Needs NOT to be in DeepAgent
     # NO TD error term, and using huber loss instead
@@ -250,6 +308,10 @@ def policy_REINFORCE(curr_state, agent):
     action_type = 'Prob'
     return action[0], action_type
 
+def policy_PPO(curr_state, agent):
+    action, p_a = agent.network_model.action_selection_with_prob(curr_state)
+    action_type = 'Prob'
+    return action[0], p_a, action_type
 
 def policy(epsilon, curr_state, iter, b, epsilon_model, wait_before_train, num_actions, agent):
     qvals = []
