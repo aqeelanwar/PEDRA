@@ -70,8 +70,8 @@ def start_environment(env_name):
     print_orderly('Environment', 80)
     env_folder = os.path.dirname(os.path.abspath(__file__)) + "/unreal_envs/" + env_name + "/"
     path = env_folder + env_name + ".exe"
-    env_process = []
-    # env_process = subprocess.Popen(path)
+    # env_process = []
+    env_process = subprocess.Popen(path)
     time.sleep(5)
     print("Successfully loaded environment: " + env_name)
 
