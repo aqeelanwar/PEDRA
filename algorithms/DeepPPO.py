@@ -1,6 +1,7 @@
 # Author: Aqeel Anwar(ICSRL)
-# Created: 2/19/2020, 8:39 AM
+# Created: 10/4/2020, 10:43 PM
 # Email: aqeel.anwar@gatech.edu
+
 
 import sys, cv2
 import nvidia_smi
@@ -14,8 +15,8 @@ from util.transformations import euler_from_quaternion
 from configs.read_cfg import read_cfg, update_algorithm_cfg
 
 
-def DeepREINFORCE(cfg, env_process, env_folder):
-    algorithm_cfg = read_cfg(config_filename='configs/DeepREINFORCE.cfg', verbose=True)
+def DeepPPO(cfg, env_process, env_folder):
+    algorithm_cfg = read_cfg(config_filename='configs/DeepPPO.cfg', verbose=True)
     algorithm_cfg.algorithm = cfg.algorithm
 
     if 'GlobalLearningGlobalUpdate-SA' in algorithm_cfg.distributed_algo:
@@ -138,13 +139,6 @@ def DeepREINFORCE(cfg, env_process, env_folder):
 
     print_orderly('Simulation begins', 80)
 
-    # save_posit = old_posit
-
-    # last_crash_array = np.zeros(shape=len(level_name), dtype=np.int32)
-    # ret_array = np.zeros(shape=len(level_name))
-    # distance_array = np.zeros(shape=len(level_name))
-    # epi_env_array = np.zeros(shape=len(level_name), dtype=np.int32)
-
     while active:
         try:
             active, automate, algorithm_cfg, client = check_user_input(active, automate, agent[name_agent], client,
@@ -199,7 +193,7 @@ def DeepREINFORCE(cfg, env_process, env_folder):
                                 else:
                                     agent_this_drone = agent[name_agent]
 
-                                action, action_type = policy_REINFORCE(current_state[name_agent], agent_this_drone)
+                                action, p_a, action_type = policy_PPO(current_state[name_agent], agent_this_drone)
                                 # print('Evaluated Policy')
                                 action_word = translate_action(action, algorithm_cfg.num_actions)
                                 # Take the action
@@ -238,7 +232,7 @@ def DeepREINFORCE(cfg, env_process, env_folder):
                                     crash = True
                                     reward = -1
 
-                                data_tuple[name_agent].append([current_state[name_agent], action, reward, crash])
+                                data_tuple[name_agent].append([current_state[name_agent], action, new_state[name_agent], reward, p_a, crash])
 
                                 # Train if episode ends
                                 if crash:
@@ -278,10 +272,10 @@ def DeepREINFORCE(cfg, env_process, env_folder):
                                                                                            index=epi_num[name_agent])
 
                                         # Train episode
-                                        train_REINFORCE(data_tuple[name_agent], algorithm_cfg.batch_size, agent_this_drone,
+                                        train_PPO(data_tuple[name_agent], algorithm_cfg, agent_this_drone,
                                                         algorithm_cfg.learning_rate, algorithm_cfg.input_size,
-                                                        algorithm_cfg.gamma, epi_num[name_agent])
-                                        c = agent_this_drone.network_model.get_vars()[15]
+                                                        algorithm_cfg.gamma, epi_num[name_agent], )
+                                        c = agent_this_drone.network_model.get_vars()[15][0]
                                         agent_this_drone.network_model.log_to_tensorboard(tag='weight', group=name_agent,
                                                                                           value=c[0],
                                                                                           index=epi_num[name_agent])
