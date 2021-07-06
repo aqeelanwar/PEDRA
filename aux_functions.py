@@ -286,11 +286,12 @@ def print_orderly(str, n):
     hyphens = '-' * int((n - len(str)) / 2)
     print(hyphens + ' ' + str + ' ' + hyphens)
 
-def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1, client=[]):
+def connect_drone(ip_address='127.0.0.5', phase='infer', num_agents=1, client=[]):
     if client != []:
         client.reset()
     print_orderly('Drone', 80)
-    client = airsim.MultirotorClient(ip=ip_address, timeout_value=10)
+    client = airsim.MultirotorClient(ip=ip_address,port=1234, timeout_value=10)
+    # client = airsim.MultirotorClient( timeout_value=10)
     client.confirmConnection()
     time.sleep(1)
 
@@ -301,6 +302,7 @@ def connect_drone(ip_address='127.0.0.0', phase='infer', num_agents=1, client=[]
         client.armDisarm(True, name_agent)
         # time.sleep(1)
         client.takeoffAsync(vehicle_name=name_agent)
+        # client.moveByVelocityZAsync(0, 0, -1.5, 1, vehicle_name=name_agent)
         time.sleep(1)
         old_posit[name_agent] = client.simGetVehiclePose(vehicle_name=name_agent)
 
