@@ -83,6 +83,7 @@ def getObservation(client : airsim.MultirotorClient):
             airsim.ImageRequest("1", airsim.ImageType.Segmentation, False, False),
             airsim.ImageRequest("2", airsim.ImageType.DepthPlanner, True, False)
         ])
+        
         rgbImg = responses[0]
         segImg = responses[1]
         depthImg = responses[2]
@@ -107,7 +108,7 @@ def getObservation(client : airsim.MultirotorClient):
         
 
         observation['depth'] = depth
-        observation['fpv'] = cv2.resize(rgb, (128, 128))
+        observation['fpv'] = cv2.resize(rgb, (256, 256))
 
         position = observation['droneState'].kinematics_estimated.position
 
@@ -125,7 +126,7 @@ if __name__ == '__main__':
     # Read the config file
     cfg = read_cfg(config_filename='configs/config.cfg', verbose=True)
     cfg.num_agents=1
-    can_proceed = True#generate_json(cfg)
+    can_proceed = generate_json(cfg)
     name = 'drone0'
     # Check if NVIDIA GPU is available
     try:
@@ -147,7 +148,7 @@ if __name__ == '__main__':
                 cv2.imshow('a', image)
                 k  = cv2.waitKey(1)
                 # time.sleep(0.5)
-                if k == ord('q'):
+                if k == ord('o'):
                     close_env(env_process)
                     exit()
                 elif k == ord('i'):
@@ -162,6 +163,15 @@ if __name__ == '__main__':
                     client.moveByVelocityAsync(0.0, val, 0.0, 1)
                 elif k == ord('d'):
                     client.moveByVelocityAsync(0.0, -val, 0.0,  1)
+                elif k == ord('e'):
+                    # client.rotateToYawAsync(90.,3e+38,1)
+                    # client.rotateToYawAsync(45, timeout_sec=3e+38, margin=5)
+                    # client.rotateByYawRateAsync(20, 1)#, vehicle_name='')
+                    from airsim.types import YawMode
+                    ya = YawMode()
+                    ya.is_rate = False
+                    ya.yaw_or_rate=90
+                    client.moveByVelocityAsync(0.0, 0.0, 0.0,  3, drivetrain=1,yaw_mode=ya)
 
         except Exception as e:
 
