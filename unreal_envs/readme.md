@@ -29,7 +29,7 @@ PEDRA comes equip with a library of 3D realistic environments that can be used f
 <!-- The videos above is a walk through different environments so it helps you to pick based on your needs instead of downloading it and then looking at it. -->
 
 ## Downloading the environments
-The compressed zip file of environments can be downloaded from [here](https://gtvault-my.sharepoint.com/:f:/g/personal/manwar8_gatech_edu/EnCc2xWKBCpIkWseegrp1EYB69y0zS3nLqzsaSfE-KAD4g?e=HtI1ck). Once downloaded, extract the zip file into the unreal_envs folder
+The compressed zip file of environments can be downloaded from [here](https://drive.google.com/drive/folders/1CliGXB4qQflgc4lNKLkOUUp8mntejj8h?usp=sharing). Once downloaded, extract the zip file into the unreal_envs folder
 
 
 ## Environment file structure:
