@@ -11,7 +11,7 @@ gast==0.2.2
 google-pasta==0.1.7
 grpcio==1.24.1
 h5py==2.10.0
-html5lib==0.9999999
+html5lib==0.999999999
 imageio==2.8.0
 Keras-Applications==1.0.8
 Keras-Preprocessing==1.1.0
