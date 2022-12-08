@@ -2,7 +2,7 @@ absl-py==0.8.1
 airsim==1.2.4
 astor==0.8.0
 bleach==1.5.0
-certifi==2018.8.24
+certifi==2022.12.7
 cycler==0.10.0
 decorator==4.4.2
 dotmap==1.3.8
